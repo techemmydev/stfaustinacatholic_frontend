@@ -1,10 +1,12 @@
 import "./App.css";
-import ParishRegistrationForm from "./MyUiComponents/ParishRegistrationForm";
+import Example from "./UiComponents/Header";
+import ParishRegistrationForm from "./UiComponents/ParishRegistrationForm";
 
 function App() {
   return (
     <>
-      <ParishRegistrationForm />
+      {/* <ParishRegistrationForm /> */}
+      <Example />
     </>
   );
 }
