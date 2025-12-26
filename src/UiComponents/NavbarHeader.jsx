@@ -16,6 +16,9 @@ import {
   ChevronDownIcon,
 } from "@heroicons/react/24/outline";
 import { Link, useLocation } from "react-router";
+import Herosection from "./Herosection";
+
+// import HeroCarousel from "./Herosection";
 
 /* ------------------ USER (optional) ------------------ */
 const user = {
@@ -70,12 +73,12 @@ function useNavigation() {
 }
 
 /* ------------------ COMPONENT ------------------ */
-export default function Navbar() {
+export default function NavbarHeader() {
   const navigation = useNavigation();
 
   return (
     <div className="min-h-full">
-      <Disclosure as="nav" className="bg-gray-800">
+      <Disclosure as="nav" className="bg-gray-800 sticky top-0 z-50">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 lg:py-5 ">
           <div className="flex h-16 items-center justify-between">
             {/* ---------------- LOGO ---------------- */}
@@ -244,6 +247,8 @@ export default function Navbar() {
           </div>
         </DisclosurePanel>
       </Disclosure>
+
+      <Herosection />
     </div>
   );
 }
