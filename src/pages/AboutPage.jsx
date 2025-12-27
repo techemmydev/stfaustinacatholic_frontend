@@ -152,6 +152,7 @@ export default function AboutPage() {
           </div>
         </section>
         <CommunityStories />
+        <AboutusMedia />
         {/* Ministries Section */}
         <section className="py-16 max-w-7xl mx-auto px-4">
           <h2 className="text-center mb-6 text-blue-900 text-3xl font-semibold">
@@ -177,7 +178,7 @@ export default function AboutPage() {
           </div>
         </section>
       </div>
-      <AboutusMedia />
+
       <InvitationModal />
     </>
   );
