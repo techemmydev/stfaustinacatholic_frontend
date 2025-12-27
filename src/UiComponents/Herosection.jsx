@@ -96,7 +96,7 @@ const Herosection = () => {
                 Mass Times
               </a>
               <a
-                href="#about"
+                href="/about"
                 className="px-8 py-3 bg-white hover:bg-gray-100 text-[#1e3a5f] font-semibold rounded shadow transition"
               >
                 About Our Parish
