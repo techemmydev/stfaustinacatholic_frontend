@@ -5,6 +5,7 @@ import HomePage from "./pages/HomePage";
 import AboutPage from "./pages/AboutPage";
 import { ContactPage } from "./pages/ContactPage";
 import { DonatePage } from "./pages/DonatePage";
+import { SermonsPage } from "./pages/SermonsPage";
 function App() {
   return (
     <>
@@ -14,12 +15,8 @@ function App() {
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="donate" element={<DonatePage />} />
-          {/* <Route path="/contact" element={<ContactForm />} />
-                <Route path="/book" element={<BookingPage />} />
-                <Route path="/bookingform" element={<BookingForm />} />
-                <Route path="/service" element={<Servicepage />} />
-                <Route path="/aboutus" element={<Aboutuspage />} />
-                <Route path="/gallery" element={<GalleryPage />} />
+          <Route path="Sermons" element={<SermonsPage />} />
+          {/* 
                 <Route path="*" element={<PagenotFound />} /> */}
         </Route>
       </Routes>
