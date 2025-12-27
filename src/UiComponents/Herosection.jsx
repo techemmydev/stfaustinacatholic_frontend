@@ -47,7 +47,7 @@ const Herosection = () => {
 
   return (
     <section
-      className="relative w-full lg:h-[510px] overflow-hidden h-[560px]"
+      className="relative w-full lg:h-[600px] overflow-hidden h-[560px] font-inter"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >

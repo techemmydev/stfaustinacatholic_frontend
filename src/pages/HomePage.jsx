@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import Stats from "@/UiComponents/Stats";
 import Testimonial from "@/UiComponents/Testimonial";
+import FaithMediaSection from "@/UiComponents/FaithMediaSection";
+import Herosection from "@/UiComponents/Herosection";
 
 // Data (used directly inside the component)
 const upcomingEvents = [
@@ -77,15 +79,18 @@ const quickLinks = [
 const HomePage = () => {
   return (
     <>
-      <div>
+      <Herosection />
+      <div className="font-inter">
         {/* Mission Section */}
         <section className="py-16 bg-[#f9f7f4]">
           <div className="max-w-4xl mx-auto px-4 text-center">
             <div className="w-16 h-16 bg-[#8B2635] rounded-full flex items-center justify-center mx-auto mb-6">
               <span className="text-4xl text-[#d4af37]">✟</span>
             </div>
-            <h2 className="mb-6 text-[#1e3a5f]">Our Mission</h2>
-            <p className="text-lg text-[#666666]">
+            <h2 className="mb-6 text-[#1e3a5f] text-4xl font-semibold">
+              Our Mission
+            </h2>
+            <p className="text-lg text-[#666666] font-inter">
               St. Faustina Parish is a vibrant Catholic community dedicated to
               spreading the Gospel, celebrating the sacraments, and serving
               those in need. We strive to be a welcoming spiritual home where
@@ -96,7 +101,7 @@ const HomePage = () => {
 
         {/* Quick Links */}
         <section className="py-16 max-w-7xl mx-auto px-4">
-          <h2 className="text-center mb-12 text-[#1e3a5f]">
+          <h2 className="text-center mb-12 text-[#1e3a5f] text-4xl font-semibold">
             Explore Our Parish
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -111,7 +116,7 @@ const HomePage = () => {
                 >
                   <link.icon className="w-7 h-7 text-white" />
                 </div>
-                <h3 className="mb-2 text-[#1e3a5f]">{link.title}</h3>
+                <h3 className="mb-2 text-[#1e3a5f] text-2xl">{link.title}</h3>
                 <p className="text-[#666666] mb-4">{link.description}</p>
                 <div className="flex items-center text-[#8B2635] group-hover:gap-2 transition-all">
                   Learn More
@@ -126,7 +131,9 @@ const HomePage = () => {
         <section className="py-16 bg-[#f9f7f4]">
           <div className="max-w-7xl mx-auto px-4">
             <div className="flex justify-between items-center mb-12">
-              <h2 className="text-[#1e3a5f] m-0">Upcoming Events</h2>
+              <h2 className="text-[#1e3a5f] m-0 text-4xl font-semibold">
+                Upcoming Events
+              </h2>
               <Link
                 to="/mass-schedule"
                 className="text-[#8B2635] hover:text-[#6d1d2a] flex items-center gap-1"
@@ -145,7 +152,9 @@ const HomePage = () => {
                     <Calendar className="w-5 h-5 text-[#8B2635]" />
                     <span className="text-sm text-[#8B2635]">{event.type}</span>
                   </div>
-                  <h3 className="mb-3 text-[#1e3a5f]">{event.title}</h3>
+                  <h3 className="mb-3 text-[#1e3a5f] text-2xl">
+                    {event.title}
+                  </h3>
                   <div className="space-y-2 text-[#666666]">
                     <p className="flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-[#d4af37]" />
@@ -165,7 +174,7 @@ const HomePage = () => {
         {/* Call to Action */}
         <section className="py-20 bg-[#1e3a5f] text-white">
           <div className="max-w-4xl mx-auto px-4 text-center">
-            <h2 className="text-white mb-6">Join Us in Worship</h2>
+            <h2 className="text-white mb-6 text-4xl">Join Us in Worship</h2>
             <p className="text-xl mb-8 text-gray-200">
               Whether you{"\u2019"}re new to the area or seeking a spiritual
               home, we welcome you with open arms.
@@ -189,6 +198,7 @@ const HomePage = () => {
       </div>
       <Stats />
       <Testimonial />
+      <FaithMediaSection />
     </>
   );
 };

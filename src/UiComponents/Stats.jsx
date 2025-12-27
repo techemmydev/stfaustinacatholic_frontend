@@ -51,7 +51,7 @@ export default function Stats() {
   }, []);
 
   return (
-    <section className="relative bg-gradient-to-b from-gray-50 via-white to-gray-50 py-16 sm:py-24 lg:py-20 overflow-hidden">
+    <section className="relative bg-gradient-to-b from-gray-50 via-white to-gray-50 py-16 sm:py-24 lg:py-20 overflow-hidden font-inter">
       {/* Decorative Background */}
       <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-red-100/50 to-transparent rounded-full blur-3xl -z-10" />
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-blue-100/50 to-transparent rounded-full blur-3xl -z-10" />

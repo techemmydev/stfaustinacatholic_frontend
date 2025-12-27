@@ -16,9 +16,6 @@ import {
   ChevronDownIcon,
 } from "@heroicons/react/24/outline";
 import { Link, useLocation } from "react-router";
-import Herosection from "./Herosection";
-
-// import HeroCarousel from "./Herosection";
 
 /* ------------------ USER (optional) ------------------ */
 const user = {
@@ -78,7 +75,10 @@ export default function NavbarHeader() {
 
   return (
     <div className="min-h-full">
-      <Disclosure as="nav" className="bg-gray-800 sticky top-0 z-50">
+      <Disclosure
+        as="nav"
+        className="fixed top-0 left-0 w-full bg-gray-800 z-50 shadow-md"
+      >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 lg:py-5 ">
           <div className="flex h-16 items-center justify-between">
             {/* ---------------- LOGO ---------------- */}
@@ -248,7 +248,7 @@ export default function NavbarHeader() {
         </DisclosurePanel>
       </Disclosure>
 
-      <Herosection />
+      {/* <Herosection /> */}
     </div>
   );
 }

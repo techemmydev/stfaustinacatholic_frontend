@@ -41,7 +41,7 @@ const getInitials = (name) =>
 
 const Testimonial = () => {
   return (
-    <section className="py-20 bg-[#f9f7f4]">
+    <section className="py-20 bg-[#f9f7f4] font-inter">
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <motion.h2
