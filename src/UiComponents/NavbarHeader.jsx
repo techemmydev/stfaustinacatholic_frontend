@@ -79,7 +79,7 @@ export default function NavbarHeader() {
         as="nav"
         className="fixed top-0 left-0 w-full bg-gray-800 z-50 shadow-md"
       >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 lg:py-5 ">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 lg:py-5">
           <div className="flex h-16 items-center justify-between">
             {/* ---------------- LOGO ---------------- */}
             <div className="flex items-center">
@@ -100,7 +100,6 @@ export default function NavbarHeader() {
               <div className="hidden md:block">
                 <div className="ml-10 flex items-center space-x-4">
                   {navigation.map((item) => {
-                    /* Donate CTA */
                     if (item.label === "Donate") {
                       return (
                         <Link
@@ -113,7 +112,6 @@ export default function NavbarHeader() {
                       );
                     }
 
-                    /* Dropdown (Sacraments) */
                     if (item.children) {
                       return (
                         <Menu key={item.label} as="div" className="relative">
@@ -145,7 +143,6 @@ export default function NavbarHeader() {
                       );
                     }
 
-                    /* Normal Link */
                     return (
                       <Link
                         key={item.label}
@@ -166,16 +163,34 @@ export default function NavbarHeader() {
             </div>
 
             {/* ---------------- RIGHT SIDE ---------------- */}
-            <div className="hidden md:flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-4">
+              {/* Login */}
+              <Link
+                to="/login"
+                className="text-sm font-medium text-gray-300 hover:text-white transition"
+              >
+                Login
+              </Link>
+
+              {/* Sign Up */}
+              <Link
+                to="/signup"
+                className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-100 transition"
+              >
+                Sign Up
+              </Link>
+
+              {/* Notification */}
               <button className="rounded-full p-1 text-gray-400 hover:text-white">
                 <BellIcon className="size-6" />
               </button>
 
+              {/* Profile Menu */}
               <Menu as="div" className="relative">
                 <MenuButton className="flex items-center rounded-full">
                   <img
                     src={user.imageUrl}
-                    alt=""
+                    alt="User profile"
                     className="size-8 rounded-full"
                   />
                 </MenuButton>
@@ -198,8 +213,8 @@ export default function NavbarHeader() {
             {/* ---------------- MOBILE BUTTON ---------------- */}
             <div className="-mr-2 flex md:hidden">
               <DisclosureButton className="inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:text-white">
-                <Bars3Icon className="block size-15 group-data-open:hidden" />
-                <XMarkIcon className="hidden size-15 group-data-open:block" />
+                <Bars3Icon className="block size-6 group-data-open:hidden" />
+                <XMarkIcon className="hidden size-6 group-data-open:block" />
               </DisclosureButton>
             </div>
           </div>
@@ -244,11 +259,25 @@ export default function NavbarHeader() {
                 </DisclosureButton>
               )
             )}
+
+            {/* Mobile Auth Links */}
+            <div className="border-t border-gray-700 mt-3 pt-3 space-y-2">
+              <Link
+                to="/login"
+                className="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-white/5 hover:text-white"
+              >
+                Login
+              </Link>
+              <Link
+                to="/signup"
+                className="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-white/5 hover:text-white"
+              >
+                Sign Up
+              </Link>
+            </div>
           </div>
         </DisclosurePanel>
       </Disclosure>
-
-      {/* <Herosection /> */}
     </div>
   );
 }
