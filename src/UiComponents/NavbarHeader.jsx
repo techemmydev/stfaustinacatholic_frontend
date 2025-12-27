@@ -198,8 +198,8 @@ export default function NavbarHeader() {
             {/* ---------------- MOBILE BUTTON ---------------- */}
             <div className="-mr-2 flex md:hidden">
               <DisclosureButton className="inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:text-white">
-                <Bars3Icon className="block size-6 group-data-open:hidden" />
-                <XMarkIcon className="hidden size-6 group-data-open:block" />
+                <Bars3Icon className="block size-15 group-data-open:hidden" />
+                <XMarkIcon className="hidden size-15 group-data-open:block" />
               </DisclosureButton>
             </div>
           </div>
