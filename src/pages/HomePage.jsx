@@ -12,6 +12,7 @@ import Stats from "@/UiComponents/Stats";
 import Testimonial from "@/UiComponents/Testimonial";
 import FaithMediaSection from "@/UiComponents/FaithMediaSection";
 import Herosection from "@/UiComponents/Herosection";
+import MassBookingCTA from "@/UiComponents/MassBookingCTA";
 
 // Data (used directly inside the component)
 const upcomingEvents = [
@@ -199,6 +200,7 @@ const HomePage = () => {
       <Stats />
       <Testimonial />
       <FaithMediaSection />
+      <MassBookingCTA />
     </>
   );
 };

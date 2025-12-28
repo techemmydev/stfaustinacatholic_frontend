@@ -10,10 +10,19 @@ import { MassSchedulePage } from "./pages/MassSchedulePage";
 import { SacramentDetailPage } from "./pages/SacramentDetailPage";
 import { SacramentsPage } from "./pages/SacramentsPage";
 import { BookingPage } from "./pages/BookingPage";
+import { LoginPage } from "./pages/Loginpage";
+import ThanksgivingBooking from "./UiComponents/ThanksgivingBooking";
+import { ForgotPassword } from "./UiComponents/ForgotPassword";
+import ParishRegistrationForm from "./UiComponents/ParishRegistrationForm";
+import PagenotFound from "./pages/PagenotFound";
 function App() {
   return (
     <>
       <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/register" element={<ParishRegistrationForm />} />
+
         <Route path="/" element={<Layout />}>
           <Route index element={<HomePage />} />
           <Route path="/about" element={<AboutPage />} />
@@ -24,9 +33,9 @@ function App() {
           <Route path="/book-appointment" element={<BookingPage />} />
           <Route path="/sacraments" element={<SacramentsPage />} />
           <Route path="/sacraments/:type" element={<SacramentDetailPage />} />
-          {/* 
-                <Route path="*" element={<PagenotFound />} /> */}
+          <Route path="//mass-booking" element={<ThanksgivingBooking />} />
         </Route>
+        <Route path="*" element={<PagenotFound />} />
       </Routes>
     </>
   );

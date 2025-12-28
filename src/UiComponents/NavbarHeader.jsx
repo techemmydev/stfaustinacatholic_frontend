@@ -11,18 +11,18 @@ import {
 } from "@headlessui/react";
 import {
   Bars3Icon,
-  BellIcon,
+  // BellIcon,
   XMarkIcon,
   ChevronDownIcon,
 } from "@heroicons/react/24/outline";
 import { Link, useLocation } from "react-router";
 
 /* ------------------ USER (optional) ------------------ */
-const user = {
-  name: "Tom Cook",
-  email: "tom@example.com",
-  imageUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e",
-};
+// const user = {
+//   name: "Tom Cook",
+//   email: "tom@example.com",
+//   imageUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e",
+// };
 
 /* ------------------ NAV LINKS ------------------ */
 const navLinks = [
@@ -44,6 +44,7 @@ const navLinks = [
   { label: "Sermons", path: "/sermons" },
   { label: "Contact", path: "/contact" },
   { label: "Donate", path: "/donate" },
+  ,
 ];
 
 const userNavigation = [
@@ -181,12 +182,12 @@ export default function NavbarHeader() {
               </Link>
 
               {/* Notification */}
-              <button className="rounded-full p-1 text-gray-400 hover:text-white">
+              {/* <button className="rounded-full p-1 text-gray-400 hover:text-white">
                 <BellIcon className="size-6" />
-              </button>
+              </button> */}
 
               {/* Profile Menu */}
-              <Menu as="div" className="relative">
+              {/* <Menu as="div" className="relative">
                 <MenuButton className="flex items-center rounded-full">
                   <img
                     src={user.imageUrl}
@@ -207,7 +208,7 @@ export default function NavbarHeader() {
                     </MenuItem>
                   ))}
                 </MenuItems>
-              </Menu>
+              </Menu> */}
             </div>
 
             {/* ---------------- MOBILE BUTTON ---------------- */}

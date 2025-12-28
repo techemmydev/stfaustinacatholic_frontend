@@ -5,6 +5,7 @@ import AboutusMedia from "@/UiComponents/AboutusMedia";
 import CommunityStories from "@/UiComponents/CommunityStories";
 import InvitationModal from "@/UiComponents/InvitationModal";
 
+import FaqSection from "@/UiComponents/Faq";
 const priests = [
   {
     id: 1,
@@ -180,6 +181,7 @@ export default function AboutPage() {
       </div>
 
       <InvitationModal />
+      <FaqSection />
     </>
   );
 }
