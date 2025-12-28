@@ -21,7 +21,6 @@ function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/register" element={<ParishRegistrationForm />} />
 
         <Route path="/" element={<Layout />}>
           <Route index element={<HomePage />} />
@@ -34,6 +33,7 @@ function App() {
           <Route path="/sacraments" element={<SacramentsPage />} />
           <Route path="/sacraments/:type" element={<SacramentDetailPage />} />
           <Route path="//mass-booking" element={<ThanksgivingBooking />} />
+          <Route path="/register" element={<ParishRegistrationForm />} />
         </Route>
         <Route path="*" element={<PagenotFound />} />
       </Routes>

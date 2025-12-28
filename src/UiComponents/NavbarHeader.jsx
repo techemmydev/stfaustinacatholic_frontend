@@ -175,7 +175,7 @@ export default function NavbarHeader() {
 
               {/* Sign Up */}
               <Link
-                to="/signup"
+                to="/register"
                 className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-100 transition"
               >
                 Sign Up

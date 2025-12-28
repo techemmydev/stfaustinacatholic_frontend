@@ -36,7 +36,7 @@ export default function ParishRegistrationForm() {
     "w-full rounded-lg border border-gray-300 px-4 py-3 pr-12 text-gray-700 placeholder-gray-400 focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/30 outline-none transition font-inter";
 
   return (
-    <div className="min-h-screen bg-[#f9f7f4] py-12 px-4 font-inter">
+    <div className="min-h-screen bg-[#f9f7f4] py-12 px-4 font-inter lg:py-30">
       <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-8">
         {/* Header */}
         <div className="text-center mb-8">
