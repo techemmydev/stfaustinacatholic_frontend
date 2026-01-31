@@ -88,7 +88,7 @@ const HomePage = () => {
             <div className="w-16 h-16 bg-[#8B2635] rounded-full flex items-center justify-center mx-auto mb-6">
               <span className="text-4xl text-[#d4af37]">✟</span>
             </div>
-            <h2 className="mb-6 text-[#1e3a5f] text-4xl font-semibold">
+            <h2 className="mb-6 text-[#1e3a5f] text-3xl font-semibold">
               Our Mission
             </h2>
             <p className="text-lg text-[#666666] font-inter">
@@ -173,27 +173,57 @@ const HomePage = () => {
         </section>
 
         {/* Call to Action */}
-        <section className="py-20 bg-[#1e3a5f] text-white">
-          <div className="max-w-4xl mx-auto px-4 text-center">
-            <h2 className="text-white mb-6 text-4xl">Join Us in Worship</h2>
-            <p className="text-xl mb-8 text-gray-200">
-              Whether you{"\u2019"}re new to the area or seeking a spiritual
-              home, we welcome you with open arms.
+        <section className="py-24 bg-[#1e3a5f] text-white">
+          <div className="max-w-5xl mx-auto px-4 text-center">
+            <h2 className="text-white mb-6 text-4xl font-bold">
+              Join Us in Worship, Service, and Community
+            </h2>
+
+            <p className="text-xl mb-4 text-gray-200">
+              Our parish is a place of prayer, compassion, and belonging.
+              Whether you are visiting for the first time, seeking spiritual
+              guidance, or looking for a parish to call home, we welcome you
+              with open hearts.
             </p>
+
+            <p className="text-lg mb-10 text-gray-300">
+              Attend Mass, schedule an appointment with a priest, or register as
+              a parishioner to enjoy full access to parish services and
+              programs.
+            </p>
+
+            {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                to="/book-appointment"
-                className="px-8 py-3 bg-[#8B2635] text-white rounded-full hover:bg-[#6d1d2a] transition-colors shadow-lg"
+                to="/register"
+                className="px-10 py-4 bg-[#8B2635] text-white rounded-full hover:bg-[#6d1d2a] transition-colors shadow-lg font-semibold"
               >
-                Schedule a Visit
+                Register as a Parishioner
               </Link>
+
+              <Link
+                to="/book-appointment"
+                className="px-10 py-4 bg-white text-[#1e3a5f] rounded-full hover:bg-gray-100 transition-colors shadow-lg font-medium"
+              >
+                Schedule an Appointment
+              </Link>
+
               <Link
                 to="/contact"
-                className="px-8 py-3 bg-white text-[#1e3a5f] rounded-full hover:bg-gray-100 transition-colors shadow-lg"
+                className="px-10 py-4 border border-white/60 text-white rounded-full hover:bg-white/10 transition-colors shadow-lg font-medium"
               >
-                Contact Us
+                Contact the Parish Office
               </Link>
             </div>
+
+            {/* Scripture / Message */}
+            <p className="mt-10 text-sm text-gray-300 max-w-3xl mx-auto">
+              “They devoted themselves to the teaching of the apostles and to
+              the communal life, to the breaking of the bread and to the
+              prayers.”
+              <br />
+              <span className="italic">— Acts 2:42</span>
+            </p>
           </div>
         </section>
       </div>

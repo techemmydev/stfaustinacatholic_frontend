@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import hero1 from "../assets/images/stfaustinaimage.png";
+import hero3 from "../assets/images/cross1.avif";
 import hero2 from "../assets/images/slide4.avif";
 
 const slides = [
@@ -20,7 +21,7 @@ const slides = [
       "“Where two or three are gathered in my name, I am there.” (Mt 18:20)",
   },
   {
-    image: hero1,
+    image: hero3,
     title: "Serving God & Neighbor",
     subtitle: "Living the Gospel through charity, ministry, and compassion.",
     verse: "“Be merciful, just as your Father is merciful.” (Lk 6:36)",
@@ -90,7 +91,7 @@ const Herosection = () => {
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a
-                href="#mass-times"
+                href="/mass-schedule"
                 className="px-8 py-3 bg-[#d4af37] hover:bg-[#b8962e] text-black font-semibold rounded shadow transition"
               >
                 Mass Times
