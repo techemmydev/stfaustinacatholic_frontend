@@ -16,10 +16,15 @@ import { ForgotPassword } from "./UiComponents/ForgotPassword";
 import ParishRegistrationForm from "./UiComponents/ParishRegistrationForm";
 import PagenotFound from "./pages/PagenotFound";
 import { CookieBanner } from "./UiComponents/CookieBanner";
-
+import { useInactivity } from "./lib/useInactivity";
+import { LockScreen } from "./UiComponents/LockScreen";
+import { useSelector } from "react-redux";
 function App() {
+  useInactivity(); // starts the inactivity timer
+  const { isLocked } = useSelector((state) => state.lock);
   return (
     <>
+      {isLocked && <LockScreen />}
       <CookieBanner />
       <Routes>
         <Route path="/admin-login" element={<LoginPage />} />
