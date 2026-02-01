@@ -3,23 +3,45 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   createParishRegistration,
   resetStatus,
+  setSelectedDate,
 } from "../Redux/slice/ParishUserRegistrationSlice";
 import { Loader2, CheckCircle } from "lucide-react";
 import logo from "../assets/images/stfaustinaimage.png";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+import CalenderUi from "./CalenderUi";
+
 export default function ParishRegistrationForm() {
   const dispatch = useDispatch();
+
+  // Safe destructuring with default empty object
   const {
     loading,
     success,
     error: serverError,
+    selectedDates = {}, // ✅ default to {} if undefined
   } = useSelector((state) => state.parishRegister);
+
+  // Then parsedDate will work safely
+  const parsedDate = {
+    dob: selectedDates.dob ? new Date(selectedDates.dob) : null,
+    baptismDate: selectedDates.baptismDate
+      ? new Date(selectedDates.baptismDate)
+      : null,
+    communionDate: selectedDates.communionDate
+      ? new Date(selectedDates.communionDate)
+      : null,
+    confirmationDate: selectedDates.confirmationDate
+      ? new Date(selectedDates.confirmationDate)
+      : null,
+    marriageDate: selectedDates.marriageDate
+      ? new Date(selectedDates.marriageDate)
+      : null,
+  };
 
   const [form, setForm] = useState({
     fullName: "",
-    dob: "",
     gender: "",
     address: "",
     phone: "",
@@ -27,16 +49,9 @@ export default function ParishRegistrationForm() {
     occupation: "",
     maritalStatus: "Single",
     spouseName: "",
-    emergencyContactName: "",
-    emergencyContactPhone: "",
-    baptismDate: "",
     baptismParish: "",
-    communionDate: "",
-    confirmationDate: "",
-    marriageDate: "",
     previousParish: "",
     ministries: [],
-    preferredMass: "",
     accessibility: "",
   });
 
@@ -53,15 +68,12 @@ export default function ParishRegistrationForm() {
   /* ---------------- Effects ---------------- */
   useEffect(() => {
     if (success) {
-      // Show modal first
       setShowModal(true);
       toast.success("Registration successful! You can now log in.");
 
-      // Clear form after short delay
       setTimeout(() => {
         setForm({
           fullName: "",
-          dob: "",
           gender: "",
           address: "",
           phone: "",
@@ -69,19 +81,11 @@ export default function ParishRegistrationForm() {
           occupation: "",
           maritalStatus: "Single",
           spouseName: "",
-          emergencyContactName: "",
-          emergencyContactPhone: "",
-          baptismDate: "",
           baptismParish: "",
-          communionDate: "",
-          confirmationDate: "",
-          marriageDate: "",
           previousParish: "",
           ministries: [],
-          preferredMass: "",
           accessibility: "",
         });
-
         setSacraments({
           baptized: "",
           communion: "",
@@ -130,28 +134,51 @@ export default function ParishRegistrationForm() {
     }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setError("");
 
     if (!form.fullName || !form.email || !form.gender) {
-      setError("Please fill in all required fields");
-      toast.error("Please fill in all required fields");
+      toast.error("Please fill all required fields");
       return;
     }
 
-    const { ...payload } = form;
     const finalPayload = {
-      ...payload,
+      fullName: form.fullName,
+      dob: selectedDates.dob || null,
+      gender: form.gender,
+      address: form.address,
+      phone: form.phone,
+      email: form.email,
+      occupation: form.occupation,
+      maritalStatus: form.maritalStatus,
+      spouseName: form.spouseName,
+      previousParish: form.previousParish,
+      ministries: form.ministries,
+      accessibility: form.accessibility,
+
       sacraments: {
         baptized: sacraments.baptized === "yes",
+        baptismDate:
+          sacraments.baptized === "yes" ? selectedDates.baptismDate : null,
+        baptismParish: sacraments.baptized === "yes" ? form.baptismParish : "",
+
         communion: sacraments.communion === "yes",
+        communionDate:
+          sacraments.communion === "yes" ? selectedDates.communionDate : null,
+
         confirmed: sacraments.confirmed === "yes",
+        confirmationDate:
+          sacraments.confirmed === "yes"
+            ? selectedDates.confirmationDate
+            : null,
+
         married: sacraments.married === "yes",
+        marriageDate:
+          sacraments.married === "yes" ? selectedDates.marriageDate : null,
       },
     };
 
-    console.log("Submitting:", finalPayload);
+    console.log("FINAL PAYLOAD 👉", finalPayload);
     dispatch(createParishRegistration(finalPayload));
   };
 
@@ -194,17 +221,17 @@ export default function ParishRegistrationForm() {
                   required
                 />
               </label>
+
               <label className="flex flex-col">
                 <span className="mb-1 text-sm font-medium">Date of Birth</span>
-                <input
-                  className={inputStyle}
-                  type="date"
-                  name="dob"
-                  value={form.dob}
-                  onChange={handleChange}
-                  disabled={loading}
+                <CalenderUi
+                  selectedDate={parsedDate.dob}
+                  setSelectedDate={(date) =>
+                    dispatch(setSelectedDate({ key: "dob", date }))
+                  }
                 />
               </label>
+
               <label className="flex flex-col">
                 <span className="mb-1 text-sm font-medium">Gender *</span>
                 <select
@@ -221,6 +248,7 @@ export default function ParishRegistrationForm() {
                   <option>Other</option>
                 </select>
               </label>
+
               <label className="flex flex-col">
                 <span className="mb-1 text-sm font-medium">Phone Number</span>
                 <input
@@ -232,6 +260,7 @@ export default function ParishRegistrationForm() {
                   disabled={loading}
                 />
               </label>
+
               <label className="flex flex-col">
                 <span className="mb-1 text-sm font-medium">Home Address</span>
                 <input
@@ -243,6 +272,7 @@ export default function ParishRegistrationForm() {
                   disabled={loading}
                 />
               </label>
+
               <label className="flex flex-col">
                 <span className="mb-1 text-sm font-medium">
                   Email Address *
@@ -258,6 +288,7 @@ export default function ParishRegistrationForm() {
                   required
                 />
               </label>
+
               <label className="flex flex-col">
                 <span className="mb-1 text-sm font-medium">Occupation</span>
                 <input
@@ -292,6 +323,7 @@ export default function ParishRegistrationForm() {
                 <option>Divorced</option>
               </select>
             </label>
+
             {form.maritalStatus === "Married" && (
               <label className="flex flex-col mt-4">
                 <span className="mb-1 text-sm font-medium">Spouse Name</span>
@@ -313,214 +345,191 @@ export default function ParishRegistrationForm() {
               Sacramental Information
             </h3>
 
-            <div className="space-y-6">
-              {/* Baptism */}
-              <div>
-                <p className="font-medium mb-2">Have you been baptized?</p>
-                <div className="flex gap-4 mb-3">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="baptized"
-                      value="yes"
-                      checked={sacraments.baptized === "yes"}
-                      onChange={handleSacramentChange}
-                      disabled={loading}
-                      className="w-4 h-4"
-                    />
-                    <span>Yes</span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="baptized"
-                      value="no"
-                      checked={sacraments.baptized === "no"}
-                      onChange={handleSacramentChange}
-                      disabled={loading}
-                      className="w-4 h-4"
-                    />
-                    <span>No</span>
-                  </label>
-                </div>
-                {sacraments.baptized === "yes" && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <label className="flex flex-col">
-                      <span className="mb-1 text-sm font-medium">
-                        Baptism Date
-                      </span>
-                      <input
-                        className={inputStyle}
-                        type="date"
-                        name="baptismDate"
-                        value={form.baptismDate}
-                        onChange={handleChange}
-                        disabled={loading}
-                      />
-                    </label>
-                    <label className="flex flex-col">
-                      <span className="mb-1 text-sm font-medium">
-                        Baptism Parish
-                      </span>
-                      <input
-                        className={inputStyle}
-                        name="baptismParish"
-                        placeholder="Enter parish"
-                        value={form.baptismParish}
-                        onChange={handleChange}
-                        disabled={loading}
-                      />
-                    </label>
-                  </div>
-                )}
+            {/* Baptism */}
+            <div>
+              <p className="font-medium mb-2">Have you been baptized?</p>
+              <div className="flex gap-4 mb-3">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="baptized"
+                    value="yes"
+                    checked={sacraments.baptized === "yes"}
+                    onChange={handleSacramentChange}
+                    disabled={loading}
+                    className="w-4 h-4"
+                  />
+                  <span>Yes</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="baptized"
+                    value="no"
+                    checked={sacraments.baptized === "no"}
+                    onChange={handleSacramentChange}
+                    disabled={loading}
+                    className="w-4 h-4"
+                  />
+                  <span>No</span>
+                </label>
               </div>
 
-              {/* Communion */}
-              <div>
-                <p className="font-medium mb-2">
-                  Have you received First Communion?
-                </p>
-                <div className="flex gap-4 mb-3">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="communion"
-                      value="yes"
-                      checked={sacraments.communion === "yes"}
-                      onChange={handleSacramentChange}
-                      disabled={loading}
-                      className="w-4 h-4"
-                    />
-                    <span>Yes</span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="communion"
-                      value="no"
-                      checked={sacraments.communion === "no"}
-                      onChange={handleSacramentChange}
-                      disabled={loading}
-                      className="w-4 h-4"
-                    />
-                    <span>No</span>
-                  </label>
-                </div>
-                {sacraments.communion === "yes" && (
+              {sacraments.baptized === "yes" && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <label className="flex flex-col">
                     <span className="mb-1 text-sm font-medium">
-                      Communion Date
+                      Baptism Date
+                    </span>
+                    <CalenderUi
+                      selectedDate={parsedDate.baptismDate}
+                      setSelectedDate={(date) =>
+                        dispatch(setSelectedDate({ key: "baptismDate", date }))
+                      }
+                    />
+                  </label>
+
+                  <label className="flex flex-col">
+                    <span className="mb-1 text-sm font-medium">
+                      Baptism Parish
                     </span>
                     <input
                       className={inputStyle}
-                      type="date"
-                      name="communionDate"
-                      value={form.communionDate}
+                      name="baptismParish"
+                      placeholder="Enter parish"
+                      value={form.baptismParish}
                       onChange={handleChange}
                       disabled={loading}
                     />
                   </label>
-                )}
-              </div>
-
-              {/* Confirmation */}
-              <div>
-                <p className="font-medium mb-2">
-                  Have you received Confirmation?
-                </p>
-                <div className="flex gap-4 mb-3">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="confirmed"
-                      value="yes"
-                      checked={sacraments.confirmed === "yes"}
-                      onChange={handleSacramentChange}
-                      disabled={loading}
-                      className="w-4 h-4"
-                    />
-                    <span>Yes</span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="confirmed"
-                      value="no"
-                      checked={sacraments.confirmed === "no"}
-                      onChange={handleSacramentChange}
-                      disabled={loading}
-                      className="w-4 h-4"
-                    />
-                    <span>No</span>
-                  </label>
-                </div>
-                {sacraments.confirmed === "yes" && (
-                  <label className="flex flex-col">
-                    <span className="mb-1 text-sm font-medium">
-                      Confirmation Date
-                    </span>
-                    <input
-                      className={inputStyle}
-                      type="date"
-                      name="confirmationDate"
-                      value={form.confirmationDate}
-                      onChange={handleChange}
-                      disabled={loading}
-                    />
-                  </label>
-                )}
-              </div>
-
-              {/* Marriage */}
-              {form.maritalStatus === "Married" && (
-                <div>
-                  <p className="font-medium mb-2">
-                    Are you married in the Catholic Church?
-                  </p>
-                  <div className="flex gap-4 mb-3">
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        name="married"
-                        value="yes"
-                        checked={sacraments.married === "yes"}
-                        onChange={handleSacramentChange}
-                        disabled={loading}
-                        className="w-4 h-4"
-                      />
-                      <span>Yes</span>
-                    </label>
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        name="married"
-                        value="no"
-                        checked={sacraments.married === "no"}
-                        onChange={handleSacramentChange}
-                        disabled={loading}
-                        className="w-4 h-4"
-                      />
-                      <span>No</span>
-                    </label>
-                  </div>
-                  {sacraments.married === "yes" && (
-                    <label className="flex flex-col">
-                      <span className="mb-1 text-sm font-medium">
-                        Marriage Date
-                      </span>
-                      <input
-                        className={inputStyle}
-                        type="date"
-                        name="marriageDate"
-                        value={form.marriageDate}
-                        onChange={handleChange}
-                        disabled={loading}
-                      />
-                    </label>
-                  )}
                 </div>
               )}
             </div>
+
+            {/* Communion */}
+            <div>
+              <p className="font-medium mb-2">
+                Have you received First Communion?
+              </p>
+              <div className="flex gap-4 mb-3">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="communion"
+                    value="yes"
+                    checked={sacraments.communion === "yes"}
+                    onChange={handleSacramentChange}
+                    disabled={loading}
+                    className="w-4 h-4"
+                  />
+                  <span>Yes</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="communion"
+                    value="no"
+                    checked={sacraments.communion === "no"}
+                    onChange={handleSacramentChange}
+                    disabled={loading}
+                    className="w-4 h-4"
+                  />
+                  <span>No</span>
+                </label>
+              </div>
+              {sacraments.communion === "yes" && (
+                <CalenderUi
+                  selectedDate={parsedDate.communionDate}
+                  setSelectedDate={(date) =>
+                    dispatch(setSelectedDate({ key: "communionDate", date }))
+                  }
+                />
+              )}
+            </div>
+
+            {/* Confirmation */}
+            <div>
+              <p className="font-medium mb-2">
+                Have you received Confirmation?
+              </p>
+              <div className="flex gap-4 mb-3">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="confirmed"
+                    value="yes"
+                    checked={sacraments.confirmed === "yes"}
+                    onChange={handleSacramentChange}
+                    disabled={loading}
+                    className="w-4 h-4"
+                  />
+                  <span>Yes</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="confirmed"
+                    value="no"
+                    checked={sacraments.confirmed === "no"}
+                    onChange={handleSacramentChange}
+                    disabled={loading}
+                    className="w-4 h-4"
+                  />
+                  <span>No</span>
+                </label>
+              </div>
+              {sacraments.confirmed === "yes" && (
+                <CalenderUi
+                  selectedDate={parsedDate.confirmationDate}
+                  setSelectedDate={(date) =>
+                    dispatch(setSelectedDate({ key: "confirmationDate", date }))
+                  }
+                />
+              )}
+            </div>
+
+            {/* Marriage */}
+            {form.maritalStatus === "Married" && (
+              <div>
+                <p className="font-medium mb-2">
+                  Are you married in the Catholic Church?
+                </p>
+                <div className="flex gap-4 mb-3">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="married"
+                      value="yes"
+                      checked={sacraments.married === "yes"}
+                      onChange={handleSacramentChange}
+                      disabled={loading}
+                      className="w-4 h-4"
+                    />
+                    <span>Yes</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="married"
+                      value="no"
+                      checked={sacraments.married === "no"}
+                      onChange={handleSacramentChange}
+                      disabled={loading}
+                      className="w-4 h-4"
+                    />
+                    <span>No</span>
+                  </label>
+                </div>
+                {sacraments.married === "yes" && (
+                  <CalenderUi
+                    selectedDate={parsedDate.marriageDate}
+                    setSelectedDate={(date) =>
+                      dispatch(setSelectedDate({ key: "marriageDate", date }))
+                    }
+                  />
+                )}
+              </div>
+            )}
           </section>
 
           {/* PARISH LIFE */}
@@ -589,10 +598,7 @@ export default function ParishRegistrationForm() {
                 <p className="text-red-600 text-sm">{error}</p>
               </div>
             )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
           </section>
-
           {/* SUBMIT */}
           <div className="text-center pt-6">
             <button

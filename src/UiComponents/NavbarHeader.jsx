@@ -121,7 +121,7 @@ export default function NavbarHeader() {
                               item.current
                                 ? "bg-gray-900 text-white"
                                 : "text-gray-300 hover:bg-white/5 hover:text-white",
-                              "inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium"
+                              "inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium",
                             )}
                           >
                             {item.label}
@@ -152,7 +152,7 @@ export default function NavbarHeader() {
                           item.current
                             ? "bg-gray-900 text-white"
                             : "text-gray-300 hover:bg-white/5 hover:text-white",
-                          "rounded-md px-3 py-2 text-sm font-medium"
+                          "rounded-md px-3 py-2 text-sm font-medium",
                         )}
                       >
                         {item.label}
@@ -167,10 +167,10 @@ export default function NavbarHeader() {
             <div className="hidden md:flex items-center gap-4">
               {/* Login */}
               <Link
-                to="/login"
+                to="/admin-login"
                 className="text-sm font-medium text-gray-300 hover:text-white transition"
               >
-                Login
+                Admin login
               </Link>
 
               {/* Sign Up */}
@@ -178,7 +178,7 @@ export default function NavbarHeader() {
                 to="/register"
                 className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-100 transition"
               >
-                Sign Up
+                Membership
               </Link>
 
               {/* Notification */}
@@ -253,18 +253,18 @@ export default function NavbarHeader() {
                     item.current
                       ? "bg-gray-900 text-white"
                       : "text-gray-300 hover:bg-white/5 hover:text-white",
-                    "block rounded-md px-3 py-2 text-base font-medium"
+                    "block rounded-md px-3 py-2 text-base font-medium",
                   )}
                 >
                   {item.label}
                 </DisclosureButton>
-              )
+              ),
             )}
 
             {/* Mobile Auth Links */}
             <div className="border-t border-gray-700 mt-3 pt-3 space-y-2">
               <Link
-                to="/login"
+                to="/admin-login"
                 className="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-white/5 hover:text-white"
               >
                 Login

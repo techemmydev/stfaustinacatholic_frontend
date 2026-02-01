@@ -15,12 +15,15 @@ import ThanksgivingBooking from "./UiComponents/ThanksgivingBooking";
 import { ForgotPassword } from "./UiComponents/ForgotPassword";
 import ParishRegistrationForm from "./UiComponents/ParishRegistrationForm";
 import PagenotFound from "./pages/PagenotFound";
+import { CookieBanner } from "./UiComponents/CookieBanner";
+
 function App() {
   return (
     <>
+      <CookieBanner />
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/admin-login" element={<LoginPage />} />
+        <Route path="/admin-forgot-password" element={<ForgotPassword />} />
 
         <Route path="/" element={<Layout />}>
           <Route index element={<HomePage />} />

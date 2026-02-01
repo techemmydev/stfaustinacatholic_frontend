@@ -5,6 +5,8 @@ import App from "./App.jsx";
 import { BrowserRouter } from "react-router";
 import { store } from "./Redux/Store.js";
 import { Provider } from "react-redux";
+import axios from "axios";
+axios.defaults.withCredentials = true; // add this line
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter
@@ -14,5 +16,5 @@ createRoot(document.getElementById("root")).render(
         <App />
       </Provider>
     </BrowserRouter>
-  </StrictMode>
+  </StrictMode>,
 );

@@ -1,713 +1,104 @@
-import React, { useState, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  createParishRegistration,
-  resetStatus,
-} from "../Redux/slice/ParishUserRegistrationSlice";
-import { Eye, EyeOff, Loader2, CheckCircle } from "lucide-react";
-import logo from "../assets/images/stfaustinaimage.png";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import axios from "axios";
 
-export default function ParishRegistrationForm() {
-  const dispatch = useDispatch();
-  const {
-    loading,
-    success,
-    error: serverError,
-  } = useSelector((state) => state.parishRegister);
+const API_URL = import.meta.env.VITE_API_URL;
 
-  const [form, setForm] = useState({
-    fullName: "",
-    dob: "",
-    gender: "",
-    address: "",
-    phone: "",
-    email: "",
-    occupation: "",
-    maritalStatus: "Single",
-    spouseName: "",
-    emergencyContactName: "",
-    emergencyContactPhone: "",
-    baptismDate: "",
-    baptismParish: "",
-    communionDate: "",
-    confirmationDate: "",
-    marriageDate: "",
-    previousParish: "",
-    ministries: [],
-    preferredMass: "",
-    accessibility: "",
-    password: "",
-    confirmPassword: "",
-  });
+/* ==========================
+   Async Thunk
+========================== */
+export const createParishRegistration = createAsyncThunk(
+  "parishRegister/create",
+  async (parishData, { rejectWithValue }) => {
+    try {
+      console.log("Parish Registration Data:", parishData);
 
-  const [sacraments, setSacraments] = useState({
-    baptized: "",
-    communion: "",
-    confirmed: "",
-    married: "",
-  });
+      const response = await axios.post(`${API_URL}/register`, parishData, {
+        headers: { "Content-Type": "application/json" },
+        validateStatus: (status) => status >= 200 && status < 300,
+      });
 
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [error, setError] = useState("");
-  const [showModal, setShowModal] = useState(false);
-
-  /* ---------------- Effects ---------------- */
-  useEffect(() => {
-    if (success) {
-      // Show modal first
-      setShowModal(true);
-      toast.success("Registration successful! You can now log in.");
-
-      // Clear form after short delay
-      setTimeout(() => {
-        setForm({
-          fullName: "",
-          dob: "",
-          gender: "",
-          address: "",
-          phone: "",
-          email: "",
-          occupation: "",
-          maritalStatus: "Single",
-          spouseName: "",
-          emergencyContactName: "",
-          emergencyContactPhone: "",
-          baptismDate: "",
-          baptismParish: "",
-          communionDate: "",
-          confirmationDate: "",
-          marriageDate: "",
-          previousParish: "",
-          ministries: [],
-          preferredMass: "",
-          accessibility: "",
-          password: "",
-          confirmPassword: "",
-        });
-
-        setSacraments({
-          baptized: "",
-          communion: "",
-          confirmed: "",
-          married: "",
-        });
-      }, 500);
+      return response.data;
+    } catch (error) {
+      console.error("Parish Registration Error:", error);
+      return rejectWithValue(
+        error.response?.data?.message || error.message || "Registration failed"
+      );
     }
-  }, [success]);
+  }
+);
 
-  useEffect(() => {
-    if (serverError) {
-      const msg =
-        typeof serverError === "string"
-          ? serverError
-          : serverError.message || "Registration failed";
-      setError(msg);
-      toast.error(msg);
+/* ==========================
+   Slice
+========================== */
+const parishRegisterSlice = createSlice({
+  name: "parishRegister",
+  initialState: {
+    loading: false,
+    success: false,
+    error: null,
+    registration: null,
+    selectedDates: {
+      dob: null,
+      baptismDate: null,
+      communionDate: null,
+      confirmationDate: null,
+      marriageDate: null,
+    },
+  },
 
-      setTimeout(() => {
-        dispatch(resetStatus());
-        setError("");
-      }, 5000);
-    }
-  }, [serverError, dispatch]);
+  reducers: {
+    resetStatus: (state) => {
+      state.loading = false;
+      state.success = false;
+      state.error = null;
+    },
 
-  /* ---------------- Handlers ---------------- */
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
-    if (error) setError("");
-  };
+    setSelectedDate: (state, action) => {
+      // Expect action.payload = { key: "dob"|"baptismDate"|..., date: Date }
+      const { key, date } = action.payload;
+      if (key && date) {
+        state.selectedDates[key] = new Date(date).toISOString().split("T")[0];
+      } else if (key) {
+        state.selectedDates[key] = null;
+      }
+    },
 
-  const handleSacramentChange = (e) => {
-    const { name, value } = e.target;
-    setSacraments({ ...sacraments, [name]: value });
-  };
+    clearRegistration: (state) => {
+      state.registration = null;
+      state.success = false;
+      state.error = null;
+      state.selectedDates = {
+        dob: null,
+        baptismDate: null,
+        communionDate: null,
+        confirmationDate: null,
+        marriageDate: null,
+      };
+    },
+  },
 
-  const handleMinistryChange = (e) => {
-    const { value, checked } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      ministries: checked
-        ? [...prev.ministries, value]
-        : prev.ministries.filter((m) => m !== value),
-    }));
-  };
+  extraReducers: (builder) => {
+    builder
+      .addCase(createParishRegistration.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.success = false;
+      })
+      .addCase(createParishRegistration.fulfilled, (state, action) => {
+        state.loading = false;
+        state.success = true;
+        state.registration = action.payload;
+        state.error = null;
+      })
+      .addCase(createParishRegistration.rejected, (state, action) => {
+        state.loading = false;
+        state.success = false;
+        state.error = action.payload;
+      });
+  },
+});
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
+export const { resetStatus, clearRegistration, setSelectedDate } =
+  parishRegisterSlice.actions;
 
-    if (form.password !== form.confirmPassword) {
-      setError("Passwords do not match");
-      toast.error("Passwords do not match");
-      return;
-    }
-    if (form.password.length < 6) {
-      setError("Password must be at least 6 characters");
-      toast.error("Password must be at least 6 characters");
-      return;
-    }
-    if (!form.fullName || !form.email || !form.gender) {
-      setError("Please fill in all required fields");
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
-    const { confirmPassword, ...payload } = form;
-    const finalPayload = {
-      ...payload,
-      sacraments: {
-        baptized: sacraments.baptized === "yes",
-        communion: sacraments.communion === "yes",
-        confirmed: sacraments.confirmed === "yes",
-        married: sacraments.married === "yes",
-      },
-    };
-
-    console.log("Submitting:", finalPayload);
-    dispatch(createParishRegistration(finalPayload));
-  };
-
-  const handleModalClose = () => {
-    setShowModal(false);
-    dispatch(resetStatus());
-  };
-
-  const inputStyle =
-    "w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-700 focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/30 outline-none disabled:bg-gray-100 disabled:cursor-not-allowed";
-
-  return (
-    <div className="min-h-screen bg-[#f9f7f4] py-12 px-4 font-inter lg:py-32">
-      <ToastContainer position="top-right" autoClose={3000} />
-      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <img src={logo} alt="Parish Logo" className="h-20 mx-auto mb-4" />
-          <h2 className="text-3xl font-bold text-[#1e3a5f]">
-            Parishioner Registration
-          </h2>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* PERSONAL INFORMATION */}
-          <section>
-            <h3 className="text-xl font-semibold text-[#8B2635] mb-4">
-              Personal Information
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <label className="flex flex-col">
-                <span className="mb-1 text-sm font-medium">Full Name *</span>
-                <input
-                  className={inputStyle}
-                  name="fullName"
-                  placeholder="Enter full name"
-                  value={form.fullName}
-                  onChange={handleChange}
-                  disabled={loading}
-                  required
-                />
-              </label>
-              <label className="flex flex-col">
-                <span className="mb-1 text-sm font-medium">Date of Birth</span>
-                <input
-                  className={inputStyle}
-                  type="date"
-                  name="dob"
-                  value={form.dob}
-                  onChange={handleChange}
-                  disabled={loading}
-                />
-              </label>
-              <label className="flex flex-col">
-                <span className="mb-1 text-sm font-medium">Gender *</span>
-                <select
-                  className={inputStyle}
-                  name="gender"
-                  value={form.gender}
-                  onChange={handleChange}
-                  disabled={loading}
-                  required
-                >
-                  <option value="">Select Gender</option>
-                  <option>Male</option>
-                  <option>Female</option>
-                  <option>Other</option>
-                </select>
-              </label>
-              <label className="flex flex-col">
-                <span className="mb-1 text-sm font-medium">Phone Number</span>
-                <input
-                  className={inputStyle}
-                  name="phone"
-                  placeholder="Enter phone number"
-                  value={form.phone}
-                  onChange={handleChange}
-                  disabled={loading}
-                />
-              </label>
-              <label className="flex flex-col">
-                <span className="mb-1 text-sm font-medium">Home Address</span>
-                <input
-                  className={inputStyle}
-                  name="address"
-                  placeholder="Enter address"
-                  value={form.address}
-                  onChange={handleChange}
-                  disabled={loading}
-                />
-              </label>
-              <label className="flex flex-col">
-                <span className="mb-1 text-sm font-medium">
-                  Email Address *
-                </span>
-                <input
-                  className={inputStyle}
-                  type="email"
-                  name="email"
-                  placeholder="Enter email"
-                  value={form.email}
-                  onChange={handleChange}
-                  disabled={loading}
-                  required
-                />
-              </label>
-              <label className="flex flex-col">
-                <span className="mb-1 text-sm font-medium">Occupation</span>
-                <input
-                  className={inputStyle}
-                  name="occupation"
-                  placeholder="Enter occupation"
-                  value={form.occupation}
-                  onChange={handleChange}
-                  disabled={loading}
-                />
-              </label>
-            </div>
-          </section>
-
-          {/* FAMILY INFORMATION */}
-          <section>
-            <h3 className="text-xl font-semibold text-[#8B2635] mb-4">
-              Family Information
-            </h3>
-            <label className="flex flex-col">
-              <span className="mb-1 text-sm font-medium">Marital Status</span>
-              <select
-                className={inputStyle}
-                name="maritalStatus"
-                value={form.maritalStatus}
-                onChange={handleChange}
-                disabled={loading}
-              >
-                <option>Single</option>
-                <option>Married</option>
-                <option>Widowed</option>
-                <option>Divorced</option>
-              </select>
-            </label>
-            {form.maritalStatus === "Married" && (
-              <label className="flex flex-col mt-4">
-                <span className="mb-1 text-sm font-medium">Spouse Name</span>
-                <input
-                  className={inputStyle}
-                  name="spouseName"
-                  placeholder="Enter spouse name"
-                  value={form.spouseName}
-                  onChange={handleChange}
-                  disabled={loading}
-                />
-              </label>
-            )}
-          </section>
-
-          {/* SACRAMENTAL INFORMATION */}
-          <section>
-            <h3 className="text-xl font-semibold text-[#8B2635] mb-4">
-              Sacramental Information
-            </h3>
-
-            <div className="space-y-6">
-              {/* Baptism */}
-              <div>
-                <p className="font-medium mb-2">Have you been baptized?</p>
-                <div className="flex gap-4 mb-3">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="baptized"
-                      value="yes"
-                      checked={sacraments.baptized === "yes"}
-                      onChange={handleSacramentChange}
-                      disabled={loading}
-                      className="w-4 h-4"
-                    />
-                    <span>Yes</span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="baptized"
-                      value="no"
-                      checked={sacraments.baptized === "no"}
-                      onChange={handleSacramentChange}
-                      disabled={loading}
-                      className="w-4 h-4"
-                    />
-                    <span>No</span>
-                  </label>
-                </div>
-                {sacraments.baptized === "yes" && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <label className="flex flex-col">
-                      <span className="mb-1 text-sm font-medium">
-                        Baptism Date
-                      </span>
-                      <input
-                        className={inputStyle}
-                        type="date"
-                        name="baptismDate"
-                        value={form.baptismDate}
-                        onChange={handleChange}
-                        disabled={loading}
-                      />
-                    </label>
-                    <label className="flex flex-col">
-                      <span className="mb-1 text-sm font-medium">
-                        Baptism Parish
-                      </span>
-                      <input
-                        className={inputStyle}
-                        name="baptismParish"
-                        placeholder="Enter parish"
-                        value={form.baptismParish}
-                        onChange={handleChange}
-                        disabled={loading}
-                      />
-                    </label>
-                  </div>
-                )}
-              </div>
-
-              {/* Communion */}
-              <div>
-                <p className="font-medium mb-2">
-                  Have you received First Communion?
-                </p>
-                <div className="flex gap-4 mb-3">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="communion"
-                      value="yes"
-                      checked={sacraments.communion === "yes"}
-                      onChange={handleSacramentChange}
-                      disabled={loading}
-                      className="w-4 h-4"
-                    />
-                    <span>Yes</span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="communion"
-                      value="no"
-                      checked={sacraments.communion === "no"}
-                      onChange={handleSacramentChange}
-                      disabled={loading}
-                      className="w-4 h-4"
-                    />
-                    <span>No</span>
-                  </label>
-                </div>
-                {sacraments.communion === "yes" && (
-                  <label className="flex flex-col">
-                    <span className="mb-1 text-sm font-medium">
-                      Communion Date
-                    </span>
-                    <input
-                      className={inputStyle}
-                      type="date"
-                      name="communionDate"
-                      value={form.communionDate}
-                      onChange={handleChange}
-                      disabled={loading}
-                    />
-                  </label>
-                )}
-              </div>
-
-              {/* Confirmation */}
-              <div>
-                <p className="font-medium mb-2">
-                  Have you received Confirmation?
-                </p>
-                <div className="flex gap-4 mb-3">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="confirmed"
-                      value="yes"
-                      checked={sacraments.confirmed === "yes"}
-                      onChange={handleSacramentChange}
-                      disabled={loading}
-                      className="w-4 h-4"
-                    />
-                    <span>Yes</span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="confirmed"
-                      value="no"
-                      checked={sacraments.confirmed === "no"}
-                      onChange={handleSacramentChange}
-                      disabled={loading}
-                      className="w-4 h-4"
-                    />
-                    <span>No</span>
-                  </label>
-                </div>
-                {sacraments.confirmed === "yes" && (
-                  <label className="flex flex-col">
-                    <span className="mb-1 text-sm font-medium">
-                      Confirmation Date
-                    </span>
-                    <input
-                      className={inputStyle}
-                      type="date"
-                      name="confirmationDate"
-                      value={form.confirmationDate}
-                      onChange={handleChange}
-                      disabled={loading}
-                    />
-                  </label>
-                )}
-              </div>
-
-              {/* Marriage */}
-              {form.maritalStatus === "Married" && (
-                <div>
-                  <p className="font-medium mb-2">
-                    Are you married in the Catholic Church?
-                  </p>
-                  <div className="flex gap-4 mb-3">
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        name="married"
-                        value="yes"
-                        checked={sacraments.married === "yes"}
-                        onChange={handleSacramentChange}
-                        disabled={loading}
-                        className="w-4 h-4"
-                      />
-                      <span>Yes</span>
-                    </label>
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        name="married"
-                        value="no"
-                        checked={sacraments.married === "no"}
-                        onChange={handleSacramentChange}
-                        disabled={loading}
-                        className="w-4 h-4"
-                      />
-                      <span>No</span>
-                    </label>
-                  </div>
-                  {sacraments.married === "yes" && (
-                    <label className="flex flex-col">
-                      <span className="mb-1 text-sm font-medium">
-                        Marriage Date
-                      </span>
-                      <input
-                        className={inputStyle}
-                        type="date"
-                        name="marriageDate"
-                        value={form.marriageDate}
-                        onChange={handleChange}
-                        disabled={loading}
-                      />
-                    </label>
-                  )}
-                </div>
-              )}
-            </div>
-          </section>
-
-          {/* PARISH LIFE */}
-          <section>
-            <h3 className="text-xl font-semibold text-[#8B2635] mb-4">
-              Parish Life
-            </h3>
-            <label className="flex flex-col">
-              <span className="mb-1 text-sm font-medium">Previous Parish</span>
-              <input
-                className={inputStyle}
-                name="previousParish"
-                placeholder="Enter previous parish"
-                value={form.previousParish}
-                onChange={handleChange}
-                disabled={loading}
-              />
-            </label>
-
-            <div className="mt-4">
-              <p className="font-medium mb-2">
-                Ministries (Select all that apply)
-              </p>
-              <div className="space-y-2">
-                {[
-                  "Choir",
-                  "Lector",
-                  "Usher",
-                  "Youth Ministry",
-                  "Catechism",
-                ].map((m) => (
-                  <label key={m} className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      value={m}
-                      checked={form.ministries.includes(m)}
-                      onChange={handleMinistryChange}
-                      disabled={loading}
-                      className="w-4 h-4"
-                    />
-                    <span>{m}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <label className="flex flex-col mt-4">
-              <span className="mb-1 text-sm font-medium">
-                Accessibility Needs (if any)
-              </span>
-              <input
-                className={inputStyle}
-                name="accessibility"
-                placeholder="Enter any accessibility needs"
-                value={form.accessibility}
-                onChange={handleChange}
-                disabled={loading}
-              />
-            </label>
-          </section>
-
-          {/* ACCOUNT SECURITY */}
-          <section>
-            <h3 className="text-xl font-semibold text-[#8B2635] mb-4">
-              Account Security
-            </h3>
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-600 text-sm">{error}</p>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <label className="flex flex-col">
-                <span className="mb-1 text-sm font-medium">Password *</span>
-                <div className="relative">
-                  <input
-                    className={`${inputStyle} pr-12`}
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    placeholder="Enter password"
-                    value={form.password}
-                    onChange={handleChange}
-                    disabled={loading}
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#1e3a5f] disabled:opacity-50"
-                    disabled={loading}
-                  >
-                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                  </button>
-                </div>
-              </label>
-
-              <label className="flex flex-col">
-                <span className="mb-1 text-sm font-medium">
-                  Confirm Password *
-                </span>
-                <div className="relative">
-                  <input
-                    className={`${inputStyle} pr-12`}
-                    type={showConfirmPassword ? "text" : "password"}
-                    name="confirmPassword"
-                    placeholder="Confirm password"
-                    value={form.confirmPassword}
-                    onChange={handleChange}
-                    disabled={loading}
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#1e3a5f] disabled:opacity-50"
-                    disabled={loading}
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff size={20} />
-                    ) : (
-                      <Eye size={20} />
-                    )}
-                  </button>
-                </div>
-              </label>
-            </div>
-          </section>
-
-          {/* SUBMIT */}
-          <div className="text-center pt-6">
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-[#8B2635] text-white px-10 py-3 rounded-full hover:bg-[#6d1d28] transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 mx-auto"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="animate-spin" size={20} />
-                  Registering...
-                </>
-              ) : (
-                "Register"
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
-
-      {/* Success Modal */}
-      {showModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
-          <div className="bg-white p-8 rounded-xl max-w-md w-full text-center shadow-2xl">
-            <CheckCircle size={64} className="text-green-600 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-[#1e3a5f] mb-2">
-              Registration Successful!
-            </h2>
-            <p className="text-gray-600 mb-6">
-              You have successfully registered. Click below to login and access
-              the full parish website.
-            </p>
-            <a
-              href="/login"
-              className="inline-block bg-[#8B2635] text-white px-8 py-3 rounded-full hover:bg-[#6d1d28] transition-colors"
-              onClick={handleModalClose}
-            >
-              Go to Login
-            </a>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+export default parishRegisterSlice.reducer;
