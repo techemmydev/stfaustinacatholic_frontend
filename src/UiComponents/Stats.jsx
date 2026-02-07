@@ -181,7 +181,7 @@ export default function Stats() {
           </p>
 
           <motion.a
-            href="#contact"
+            href="/register"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="inline-block px-8 py-4 bg-[#8B2635] text-white font-semibold rounded-xl shadow-lg hover:bg-[#6d1d2a] transition"

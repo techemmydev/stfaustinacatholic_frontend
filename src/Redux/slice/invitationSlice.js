@@ -3,11 +3,11 @@ import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-export const submitContactForm = createAsyncThunk(
-  "contact/submit",
+export const submitInvitation = createAsyncThunk(
+  "invitation/submit",
   async (formData, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${API_URL}/contact`, formData, {
+      const response = await axios.post(`${API_URL}/invitation`, formData, {
         headers: {
           "Content-Type": "application/json",
         },
@@ -15,14 +15,14 @@ export const submitContactForm = createAsyncThunk(
       return response.data;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Failed to send message",
+        error.response?.data?.message || "Failed to send invitation",
       );
     }
   },
 );
 
-const contactSlice = createSlice({
-  name: "contact",
+const invitationSlice = createSlice({
+  name: "invitation",
   initialState: {
     loading: false,
     success: false,
@@ -30,7 +30,7 @@ const contactSlice = createSlice({
   },
 
   reducers: {
-    resetContactState: (state) => {
+    resetInvitationState: (state) => {
       state.loading = false;
       state.success = false;
       state.error = null;
@@ -39,20 +39,20 @@ const contactSlice = createSlice({
 
   extraReducers: (builder) => {
     builder
-      .addCase(submitContactForm.pending, (state) => {
+      .addCase(submitInvitation.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(submitContactForm.fulfilled, (state) => {
+      .addCase(submitInvitation.fulfilled, (state) => {
         state.loading = false;
         state.success = true;
       })
-      .addCase(submitContactForm.rejected, (state, action) => {
+      .addCase(submitInvitation.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });
   },
 });
 
-export const { resetContactState } = contactSlice.actions;
-export default contactSlice.reducer;
+export const { resetInvitationState } = invitationSlice.actions;
+export default invitationSlice.reducer;

@@ -1,43 +1,59 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { motion } from "framer-motion";
 import { Quote } from "lucide-react";
-
-const initialTestimonials = [
-  {
-    name: "Sarah Johnson",
-    role: "Youth Ministry Volunteer",
-    message:
-      "Volunteering at St. Michael's has truly transformed my faith journey. The community is welcoming and supportive!",
-  },
-  {
-    name: "Michael Thompson",
-    role: "Parishioner",
-    message:
-      "Attending services here has brought peace and joy to our family. We feel spiritually nourished every week.",
-  },
-  {
-    name: "Emily Davis",
-    role: "Choir Member",
-    message:
-      "Being part of the choir has helped me grow in faith and friendship. Music here is a true form of worship.",
-  },
-];
+import { toast } from "sonner";
+import {
+  fetchTestimonials,
+  submitTestimonial,
+  resetTestimonialState,
+} from "../Redux/slice/testimonialSlice";
 
 const CommunityStories = () => {
-  const [testimonials, setTestimonials] = useState(initialTestimonials);
+  const dispatch = useDispatch();
+  const { testimonials, loading, submitting, success, error } = useSelector(
+    (state) => state.testimonial,
+  );
+
   const [formData, setFormData] = useState({ name: "", role: "", message: "" });
-  const [submitted, setSubmitted] = useState(false);
+
+  // Fetch testimonials on mount
+  useEffect(() => {
+    dispatch(fetchTestimonials());
+  }, [dispatch]);
+
+  // Handle success
+  useEffect(() => {
+    if (success) {
+      toast.success(
+        "Your story has been submitted for review. Thank you for sharing!",
+      );
+      setFormData({ name: "", role: "", message: "" });
+      setTimeout(() => {
+        dispatch(resetTestimonialState());
+      }, 3000);
+    }
+  }, [success, dispatch]);
+
+  // Handle error
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.role || !formData.message) return;
-    setTestimonials([formData, ...testimonials]); // Add new story at the top
-    setFormData({ name: "", role: "", message: "" });
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 4000); // Reset success message
+
+    if (!formData.name || !formData.role || !formData.message) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    dispatch(submitTestimonial(formData));
   };
 
   return (
@@ -89,51 +105,64 @@ const CommunityStories = () => {
           />
           <button
             type="submit"
-            className="bg-blue-900 text-white px-6 py-3 rounded-md hover:bg-gray-800 transition font-semibold"
+            disabled={submitting}
+            className="bg-blue-900 text-white px-6 py-3 rounded-md hover:bg-gray-800 transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Submit Story
+            {submitting ? "Submitting..." : "Submit Story"}
           </button>
-          {submitted && (
+          {success && (
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5 }}
               className="text-green-600 font-semibold mt-2"
             >
-              Your story has been submitted! Thank you for sharing.
+              Your story has been submitted for review. Thank you for sharing!
             </motion.p>
           )}
         </motion.form>
 
         {/* Display Stories */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {testimonials.map((testimonial, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 30, scale: 0.95 }}
-              whileInView={{ opacity: 1, y: 0, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: index * 0.2 }}
-              className="bg-[#fbf9f5] rounded-xl p-8 shadow-lg relative overflow-hidden cursor-pointer"
-            >
-              <Quote className="w-10 h-10 text-blue-900 mb-4" />
-              <p className="text-gray-700 mb-6 text-lg leading-relaxed">
-                "{testimonial.message}"
-              </p>
-              <div>
-                <h4 className="text-blue-900 font-semibold text-lg">
-                  {testimonial.name}
-                </h4>
-                <p className="text-gray-500 text-sm">{testimonial.role}</p>
-              </div>
+        {loading ? (
+          <p className="text-gray-500">Loading testimonials...</p>
+        ) : testimonials.length === 0 ? (
+          <p className="text-gray-500">
+            No testimonials yet. Be the first to share your story!
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {testimonials.map((testimonial, index) => (
               <motion.div
-                className="absolute -top-6 -right-6 w-16 h-16 bg-blue-100 rounded-full opacity-20"
-                animate={{ rotate: 360 }}
-                transition={{ repeat: Infinity, duration: 10, ease: "linear" }}
-              ></motion.div>
-            </motion.div>
-          ))}
-        </div>
+                key={testimonial._id}
+                initial={{ opacity: 0, y: 30, scale: 0.95 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: index * 0.2 }}
+                className="bg-[#fbf9f5] rounded-xl p-8 shadow-lg relative overflow-hidden cursor-pointer"
+              >
+                <Quote className="w-10 h-10 text-blue-900 mb-4" />
+                <p className="text-gray-700 mb-6 text-lg leading-relaxed">
+                  "{testimonial.message}"
+                </p>
+                <div>
+                  <h4 className="text-blue-900 font-semibold text-lg">
+                    {testimonial.name}
+                  </h4>
+                  <p className="text-gray-500 text-sm">{testimonial.role}</p>
+                </div>
+                <motion.div
+                  className="absolute -top-6 -right-6 w-16 h-16 bg-blue-100 rounded-full opacity-20"
+                  animate={{ rotate: 360 }}
+                  transition={{
+                    repeat: Infinity,
+                    duration: 10,
+                    ease: "linear",
+                  }}
+                ></motion.div>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

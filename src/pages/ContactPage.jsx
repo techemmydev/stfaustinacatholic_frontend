@@ -1,8 +1,16 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { MapPin, Phone, Mail, Clock, Send, CheckCircle } from "lucide-react";
 import { toast, Toaster } from "sonner";
+import {
+  submitContactForm,
+  resetContactState,
+} from "../Redux/slice/ContactSlice";
 
 export function ContactPage() {
+  const dispatch = useDispatch();
+  const { loading, success, error } = useSelector((state) => state.contact);
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -11,7 +19,17 @@ export function ContactPage() {
     message: "",
   });
 
-  const [submitted, setSubmitted] = useState(false);
+  // Show toast on error
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => dispatch(resetContactState());
+  }, [dispatch]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -21,11 +39,16 @@ export function ContactPage() {
       return;
     }
 
-    console.log("Contact form submitted:", formData);
-    setSubmitted(true);
-    toast.success("Message sent successfully!");
+    dispatch(submitContactForm(formData));
+  };
 
-    // Clear form after submission
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleReset = () => {
+    dispatch(resetContactState());
     setFormData({
       name: "",
       email: "",
@@ -35,14 +58,9 @@ export function ContactPage() {
     });
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  if (submitted) {
+  if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f9f7f4] py-16  px-4 font-inter">
+      <div className="min-h-screen flex items-center justify-center bg-[#f9f7f4] py-16 px-4 font-inter">
         <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8 text-center">
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="w-12 h-12 text-green-600" />
@@ -54,16 +72,7 @@ export function ContactPage() {
             directly.
           </p>
           <button
-            onClick={() => {
-              setSubmitted(false);
-              setFormData({
-                name: "",
-                email: "",
-                phone: "",
-                subject: "",
-                message: "",
-              });
-            }}
+            onClick={handleReset}
             className="px-8 py-3 bg-[#8B2635] text-white rounded-full hover:bg-[#6d1d2a] transition-colors"
           >
             Send Another Message
@@ -76,6 +85,7 @@ export function ContactPage() {
   return (
     <div className="font-inter">
       <Toaster position="top-right" richColors />
+
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-[#1e3a5f] to-[#8B2635] py-20 lg:py-30 text-white font-inter">
         <div className="max-w-4xl mx-auto px-4 text-center lg:mt-10">
@@ -84,7 +94,7 @@ export function ContactPage() {
           </div>
           <h1 className="text-white mb-6">Contact Us</h1>
           <p className="text-xl text-gray-200">
-            We’re here to help. Reach out with questions, prayer requests, or
+            We're here to help. Reach out with questions, prayer requests, or
             feedback.
           </p>
         </div>
@@ -242,10 +252,11 @@ export function ContactPage() {
 
                 <button
                   type="submit"
-                  className="w-full px-8 py-3 bg-[#8B2635] text-white rounded-full hover:bg-[#6d1d2a] transition-colors shadow-lg flex items-center justify-center gap-2"
+                  disabled={loading}
+                  className="w-full px-8 py-3 bg-[#8B2635] text-white rounded-full hover:bg-[#6d1d2a] transition-colors shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Send className="w-5 h-5" />
-                  Send Message
+                  {loading ? "Sending..." : "Send Message"}
                 </button>
               </form>
             </div>
@@ -270,6 +281,8 @@ export function ContactPage() {
           </div>
         </div>
       </section>
+
+      {/* Emergency Section */}
       <section className="py-16">
         <div className="max-w-4xl mx-auto px-4">
           <div className="bg-[#1e3a5f] text-white rounded-lg p-8">

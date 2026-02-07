@@ -1,25 +1,66 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mail, User, X } from "lucide-react";
+import { toast } from "sonner";
+import {
+  submitInvitation,
+  resetInvitationState,
+} from "../Redux/slice/invitationSlice";
 
 const InvitationSection = () => {
+  const dispatch = useDispatch();
+  const { loading, success, error } = useSelector((state) => state.invitation);
+
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     message: "",
   });
-  const [submitted, setSubmitted] = useState(false);
+
+  // Handle success
+  useEffect(() => {
+    if (success) {
+      toast.success("Invitation sent successfully! We'll be in touch soon.");
+      setFormData({ name: "", email: "", message: "" });
+      setTimeout(() => {
+        setIsOpen(false);
+        dispatch(resetInvitationState());
+      }, 2000);
+    }
+  }, [success, dispatch]);
+
+  // Handle error
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => dispatch(resetInvitationState());
+  }, [dispatch]);
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Invitation Sent:", formData);
-    setSubmitted(true);
+
+    if (!formData.name || !formData.email) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    dispatch(submitInvitation(formData));
+  };
+
+  const handleClose = () => {
+    setIsOpen(false);
+    dispatch(resetInvitationState());
     setFormData({ name: "", email: "", message: "" });
-    setTimeout(() => setSubmitted(false), 4000);
   };
 
   return (
@@ -75,7 +116,7 @@ const InvitationSection = () => {
             >
               {/* Close Button */}
               <button
-                onClick={() => setIsOpen(false)}
+                onClick={handleClose}
                 className="absolute top-4 right-4 text-gray-500 hover:text-gray-800"
               >
                 <X className="w-6 h-6" />
@@ -85,7 +126,7 @@ const InvitationSection = () => {
                 Send Us an Invitation
               </h2>
               <p className="text-gray-700 mb-6 text-center">
-                Fill out the form and we’ll reach out to you about our parish
+                Fill out the form and we'll reach out to you about our parish
                 events or ministries.
               </p>
 
@@ -127,19 +168,20 @@ const InvitationSection = () => {
 
                 <button
                   type="submit"
-                  className="w-full bg-blue-900 text-white py-3 rounded-md font-semibold hover:bg-gray-800 transition"
+                  disabled={loading}
+                  className="w-full bg-blue-900 text-white py-3 rounded-md font-semibold hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Send Invitation
+                  {loading ? "Sending..." : "Send Invitation"}
                 </button>
 
-                {submitted && (
+                {success && (
                   <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.5 }}
                     className="text-green-600 font-semibold mt-2 text-center"
                   >
-                    Invitation sent successfully! We’ll be in touch soon.
+                    Invitation sent successfully! We'll be in touch soon.
                   </motion.p>
                 )}
               </form>
