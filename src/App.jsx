@@ -31,6 +31,11 @@ import { AdminSettingsPage } from "./Adminpages/AdminSettingsPage";
 import { AdminUsersPage } from "./Adminpages/AdminUsersPage";
 import { ProtectedRoute } from "./Adminpages/ProtectedRoute";
 
+import { AdminMassBooking } from "./Adminpages/AdminMassBooking";
+import { AdminEvents } from "./Adminpages/AdminEvents";
+import { AdminParishioners } from "./Adminpages/AdminParishioners";
+import { AdminReviews } from "./Adminpages/AdminReviews";
+
 function App() {
   useInactivity(); // starts the inactivity timer
   const { isLocked } = useSelector((state) => state.lock);
@@ -56,10 +61,14 @@ function App() {
         >
           <Route path="dashboard" element={<AdminDashboardPage />} />
           <Route path="appointments" element={<AdminAppointmentsPage />} />
+          <Route path="mass-bookings" element={<AdminMassBooking />} />
           <Route path="priests" element={<AdminPriestsPage />} />
           <Route path="mass-schedule" element={<AdminMassSchedulePage />} />
-          <Route path="settings" element={<AdminSettingsPage />} />
+          <Route path="events" element={<AdminEvents />} />
+          <Route path="parishioners" element={<AdminParishioners />} />
+          <Route path="reviews" element={<AdminReviews />} />
           <Route path="users" element={<AdminUsersPage />} />
+          <Route path="settings" element={<AdminSettingsPage />} />
         </Route>
 
         {/* Public Routes */}
