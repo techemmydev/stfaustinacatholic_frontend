@@ -43,11 +43,28 @@ export function AdminLayout() {
       path: "/admin/priests",
       icon: Users,
     },
+
     {
       name: "Mass Schedule",
       path: "/admin/mass-schedule",
       icon: Church,
     },
+    {
+      name: "Mass Bookings",
+      path: "/admin/mass-bookings",
+      icon: Church,
+    },
+    {
+      name: "Events",
+      path: "/admin/events",
+      icon: Calendar,
+    },
+    {
+      name: "Parishioners",
+      path: "/admin/parishioners",
+      icon: Users,
+    },
+
     {
       name: "Admin Users",
       path: "/admin/users",

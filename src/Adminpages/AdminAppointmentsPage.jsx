@@ -193,7 +193,7 @@ export function AdminAppointmentsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-inter">
       {/* Header with Search and Filters */}
       <Card className="border-0 shadow-md">
         <CardHeader className="border-b bg-gray-50">

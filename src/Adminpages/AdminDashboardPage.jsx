@@ -81,19 +81,19 @@ export function AdminDashboardPage() {
     switch (status) {
       case "pending":
         return (
-          <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100">
+          <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100 font-inter">
             Pending
           </Badge>
         );
       case "approved":
         return (
-          <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+          <Badge className="bg-green-100 text-green-700 hover:bg-green-100 font-inter">
             Approved
           </Badge>
         );
       case "rejected":
         return (
-          <Badge className="bg-red-100 text-red-700 hover:bg-red-100">
+          <Badge className="bg-red-100 text-red-700 hover:bg-red-100 font-inter">
             Rejected
           </Badge>
         );
@@ -103,7 +103,7 @@ export function AdminDashboardPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-inter">
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => {

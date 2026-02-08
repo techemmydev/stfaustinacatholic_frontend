@@ -168,6 +168,13 @@ export function AdminMassSchedulePage() {
                       >
                         Delete
                       </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-green-600 border-green-300 hover:bg-red-50 ml-2"
+                      >
+                        post
+                      </Button>
                     </td>
                   </tr>
                 ))}
