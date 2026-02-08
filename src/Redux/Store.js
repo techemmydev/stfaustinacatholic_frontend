@@ -8,6 +8,7 @@ import contactReducer from "./slice/contactSlice";
 import invitationReducer from "./slice/invitationSlice";
 import testimonialReducer from "./slice/testimonialSlice";
 import thanksgivingReducer from "./slice/thanksgivingSlice";
+
 export const store = configureStore({
   reducer: {
     parishRegister: parishRegisterReducer,
