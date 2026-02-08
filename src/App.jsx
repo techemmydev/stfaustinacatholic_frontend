@@ -10,26 +10,59 @@ import { MassSchedulePage } from "./pages/MassSchedulePage";
 import { SacramentDetailPage } from "./pages/SacramentDetailPage";
 import { SacramentsPage } from "./pages/SacramentsPage";
 import { BookingPage } from "./pages/BookingPage";
-import { LoginPage } from "./pages/Loginpage";
+
 import ThanksgivingBooking from "./UiComponents/ThanksgivingBooking";
 import { ForgotPassword } from "./UiComponents/ForgotPassword";
 import ParishRegistrationForm from "./UiComponents/ParishRegistrationForm";
 import PagenotFound from "./pages/PagenotFound";
 import { CookieBanner } from "./UiComponents/CookieBanner";
-import { useInactivity } from "./lib/useInactivity";
+import { useInactivity } from "./utils/useInactivity";
 import { LockScreen } from "./UiComponents/LockScreen";
 import { useSelector } from "react-redux";
+
+// Import Admin Components
+import { AdminLoginPage } from "./Adminpages/AdminLoginPage";
+import { AdminLayout } from "./Adminpages/AdminLayout";
+import { AdminDashboardPage } from "./Adminpages/AdminDashboardPage";
+import { AdminAppointmentsPage } from "./Adminpages/AdminAppointmentsPage";
+import { AdminPriestsPage } from "./Adminpages/AdminPriestsPage";
+import { AdminMassSchedulePage } from "./Adminpages/AdminMassSchedulePage";
+import { AdminSettingsPage } from "./Adminpages/AdminSettingsPage";
+import { AdminUsersPage } from "./Adminpages/AdminUsersPage";
+import { ProtectedRoute } from "./Adminpages/ProtectedRoute";
+
 function App() {
   useInactivity(); // starts the inactivity timer
   const { isLocked } = useSelector((state) => state.lock);
+
   return (
     <>
       {isLocked && <LockScreen />}
       <CookieBanner />
       <Routes>
-        <Route path="/admin-login" element={<LoginPage />} />
+        {/* Existing Admin Login (if you want to keep it) */}
+
         <Route path="/admin-forgot-password" element={<ForgotPassword />} />
 
+        {/* New Admin Routes */}
+        <Route path="/admin/login" element={<AdminLoginPage />} />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="dashboard" element={<AdminDashboardPage />} />
+          <Route path="appointments" element={<AdminAppointmentsPage />} />
+          <Route path="priests" element={<AdminPriestsPage />} />
+          <Route path="mass-schedule" element={<AdminMassSchedulePage />} />
+          <Route path="settings" element={<AdminSettingsPage />} />
+          <Route path="users" element={<AdminUsersPage />} />
+        </Route>
+
+        {/* Public Routes */}
         <Route path="/" element={<Layout />}>
           <Route index element={<HomePage />} />
           <Route path="/about" element={<AboutPage />} />
@@ -40,9 +73,11 @@ function App() {
           <Route path="/book-appointment" element={<BookingPage />} />
           <Route path="/sacraments" element={<SacramentsPage />} />
           <Route path="/sacraments/:type" element={<SacramentDetailPage />} />
-          <Route path="//mass-booking" element={<ThanksgivingBooking />} />
+          <Route path="/mass-booking" element={<ThanksgivingBooking />} />
           <Route path="/register" element={<ParishRegistrationForm />} />
         </Route>
+
+        {/* 404 Page */}
         <Route path="*" element={<PagenotFound />} />
       </Routes>
     </>

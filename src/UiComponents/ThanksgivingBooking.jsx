@@ -1,141 +1,154 @@
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { toast } from "sonner";
-
-const masses = [
-  {
-    id: 1,
-    name: "Sunday Mass – 7:00 AM",
-    booked: 2,
-  },
-  {
-    id: 2,
-    name: "Sunday Mass – 9:00 AM",
-    booked: 5,
-  },
-  {
-    id: 3,
-    name: "Sunday Mass – 11:00 AM",
-    booked: 1,
-  },
-  {
-    id: 4,
-    name: "Weekday Mass – 6:30 AM",
-    booked: 0,
-  },
-];
-
-const MAX_THANKSGIVING = 5;
+import {
+  fetchMasses,
+  submitThanksgiving,
+  resetThanksgivingState,
+} from "../Redux/slice/thanksgivingSlice";
 
 export default function ThanksgivingBooking() {
-  const [selectedMass, setSelectedMass] = useState("");
-  const [name, setName] = useState("");
-  const [intention, setIntention] = useState("");
+  const dispatch = useDispatch();
+  const { masses, loading, submitting, success, error } = useSelector(
+    (state) => state.thanksgiving,
+  );
+
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    intention: "",
+    massId: "",
+  });
+
+  // Fetch masses on mount
+  useEffect(() => {
+    dispatch(fetchMasses());
+  }, [dispatch]);
+
+  // Handle success
+  useEffect(() => {
+    if (success) {
+      toast.success("Thanksgiving submitted successfully!");
+      setForm({
+        name: "",
+        email: "",
+        intention: "",
+        massId: "",
+      });
+      setTimeout(() => {
+        dispatch(resetThanksgivingState());
+      }, 3000);
+    }
+  }, [success, dispatch]);
+
+  // Handle error
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => dispatch(resetThanksgivingState());
+  }, [dispatch]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!selectedMass || !name || !intention) {
-      toast.error("Please fill in all required fields.");
+    if (!form.name || !form.email || !form.intention || !form.massId) {
+      toast.error("Please fill in all fields");
       return;
     }
 
-    const mass = masses.find((m) => m.id === Number(selectedMass));
-
-    if (mass.booked >= MAX_THANKSGIVING) {
-      toast.error("This Mass already has the maximum number of thanksgivings.");
-      return;
-    }
-
-    console.log("Thanksgiving booked:", {
-      name,
-      intention,
-      mass: mass.name,
-    });
-
-    toast.success("Thanksgiving intention submitted successfully!");
-
-    setName("");
-    setIntention("");
-    setSelectedMass("");
+    dispatch(submitThanksgiving(form));
   };
 
   return (
-    <section className="bg-[#f9f7f4] py-16 px-4 lg:py-35">
-      <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-8">
+    <section className="py-16 bg-[#f9f7f4]">
+      <div className="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-lg">
         <h2 className="text-3xl font-bold text-center text-[#1e3a5f] mb-6">
           Thanksgiving Mass Booking
         </h2>
 
         <p className="text-center text-gray-600 mb-8">
-          You may submit a thanksgiving intention for any available Mass. Each
-          Mass accepts a maximum of <strong>5 thanksgiving intentions</strong>.
+          Submit your thanksgiving intention for Mass this week. Maximum{" "}
+          {masses[0]?.maxThanksgivings || 5} bookings per Mass.
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Name */}
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block mb-2 font-medium text-gray-700">
+            <label className="block mb-2 font-medium text-[#2d2d2d]">
               Full Name *
             </label>
             <input
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#8B2635]"
-              placeholder="Your full name"
+              placeholder="Full Name"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              required
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8B2635]"
             />
           </div>
 
-          {/* Mass Selection */}
           <div>
-            <label className="block mb-2 font-medium text-gray-700">
+            <label className="block mb-2 font-medium text-[#2d2d2d]">
+              Email Address *
+            </label>
+            <input
+              type="email"
+              placeholder="Email Address"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              required
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8B2635]"
+            />
+          </div>
+
+          <div>
+            <label className="block mb-2 font-medium text-[#2d2d2d]">
               Select Mass *
             </label>
             <select
-              value={selectedMass}
-              onChange={(e) => setSelectedMass(e.target.value)}
-              className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#8B2635]"
+              value={form.massId}
+              onChange={(e) => setForm({ ...form, massId: e.target.value })}
+              required
+              disabled={loading}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8B2635] disabled:opacity-50"
             >
-              <option value="">Choose a Mass...</option>
-              {masses.map((mass) => {
-                const isFull = mass.booked >= MAX_THANKSGIVING;
-                return (
-                  <option key={mass.id} value={mass.id} disabled={isFull}>
-                    {mass.name} —{" "}
-                    {isFull
-                      ? "Full"
-                      : `${MAX_THANKSGIVING - mass.booked} slots left`}
-                  </option>
-                );
-              })}
+              <option value="">
+                {loading ? "Loading masses..." : "Select Mass"}
+              </option>
+              {masses.map((m) => (
+                <option key={m._id} value={m._id}>
+                  {m.name}
+                </option>
+              ))}
             </select>
           </div>
 
-          {/* Intention */}
           <div>
-            <label className="block mb-2 font-medium text-gray-700">
+            <label className="block mb-2 font-medium text-[#2d2d2d]">
               Thanksgiving Intention *
             </label>
             <textarea
-              value={intention}
-              onChange={(e) => setIntention(e.target.value)}
+              placeholder="Write your thanksgiving intention..."
               rows={4}
-              className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#8B2635]"
-              placeholder="I thank God for..."
+              value={form.intention}
+              onChange={(e) => setForm({ ...form, intention: e.target.value })}
+              required
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8B2635] resize-none"
             />
           </div>
 
           <button
             type="submit"
-            className="w-full py-3 bg-[#8B2635] text-white rounded-full hover:bg-[#6d1d2a] transition"
+            disabled={submitting || loading}
+            className="w-full py-3 bg-[#8B2635] hover:bg-[#6d1d2a] text-white rounded-full font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Submit Thanksgiving
+            {submitting ? "Submitting..." : "Submit Thanksgiving"}
           </button>
         </form>
-
-        <p className="text-sm text-center text-gray-500 mt-6">
-          * Submissions are subject to parish approval.
-        </p>
       </div>
     </section>
   );
