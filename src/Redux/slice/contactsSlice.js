@@ -21,7 +21,7 @@ export const submitContactForm = createAsyncThunk(
   },
 );
 
-const contactSlice = createSlice({
+const contactsSlice = createSlice({
   name: "contact",
   initialState: {
     loading: false,
