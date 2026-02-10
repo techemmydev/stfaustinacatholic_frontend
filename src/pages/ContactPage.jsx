@@ -5,7 +5,7 @@ import { toast, Toaster } from "sonner";
 import {
   submitContactForm,
   resetContactState,
-} from "../Redux/slice/contactSlice";
+} from "../Redux/slice/contactsSlice";
 
 export function ContactPage() {
   const dispatch = useDispatch();
