@@ -32,9 +32,9 @@ import { AdminUsersPage } from "./Adminpages/AdminUsersPage";
 import { ProtectedRoute } from "./Adminpages/ProtectedRoute";
 
 import { AdminMassBooking } from "./Adminpages/Adminmassbooking";
-import { AdminEvents } from "./Adminpages/AdminEvents";
-import { AdminParishioners } from "./Adminpages/AdminParishioners";
-import { AdminReviews } from "./Adminpages/AdminReviews";
+import { AdminEvents } from "./Adminpages/Adminevents";
+import { AdminParishioners } from "./Adminpages/Adminparishioners";
+import { AdminReviews } from "./Adminpages/Adminreviews";
 
 function App() {
   useInactivity(); // starts the inactivity timer
