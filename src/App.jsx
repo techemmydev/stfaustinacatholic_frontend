@@ -31,7 +31,7 @@ import { AdminSettingsPage } from "./Adminpages/AdminSettingsPage";
 import { AdminUsersPage } from "./Adminpages/AdminUsersPage";
 import { ProtectedRoute } from "./Adminpages/ProtectedRoute";
 
-import { AdminMassBooking } from "./Adminpages/AdminMassBooking";
+import { AdminMassBooking } from "./Adminpages/Adminmassbooking";
 import { AdminEvents } from "./Adminpages/AdminEvents";
 import { AdminParishioners } from "./Adminpages/AdminParishioners";
 import { AdminReviews } from "./Adminpages/AdminReviews";
