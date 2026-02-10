@@ -4,7 +4,7 @@ import parishRegisterReducer from "./slice/ParishUserRegistrationSlice";
 import appointmentReducer from "./slice/BookingAppointSlice";
 import cookieReducer from "./slice/cookieSlice";
 import lockReducer from "./slice/lockSlice";
-import contactReducer from "./slice/contactSlice";
+import contactReducer from "./slice/contactsSlice";
 import invitationReducer from "./slice/invitationSlice";
 import testimonialReducer from "./slice/testimonialSlice";
 import thanksgivingReducer from "./slice/thanksgivingSlice";

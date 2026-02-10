@@ -52,5 +52,5 @@ const contactSlice = createSlice({
   },
 });
 
-export const { resetContactState } = contactSlice.actions;
-export default contactSlice.reducer;
+export const { resetContactState } = contactsSlice.actions;
+export default contactsSlice.reducer;
