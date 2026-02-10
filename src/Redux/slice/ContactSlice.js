@@ -28,7 +28,6 @@ const contactSlice = createSlice({
     success: false,
     error: null,
   },
-
   reducers: {
     resetContactState: (state) => {
       state.loading = false;
@@ -36,7 +35,6 @@ const contactSlice = createSlice({
       state.error = null;
     },
   },
-
   extraReducers: (builder) => {
     builder
       .addCase(submitContactForm.pending, (state) => {
