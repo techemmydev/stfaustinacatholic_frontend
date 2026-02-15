@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router";
+import { useDispatch, useSelector } from "react-redux";
 import { Eye, EyeOff, Church } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,31 +13,74 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "sonner";
+import { loginAdmin } from "../Redux/slice/adminSlice";
 
 export function AdminLoginPage() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { loading, isAuthenticated } = useSelector((state) => state.admin);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+  const [hasRedirected, setHasRedirected] = useState(false);
+  const [remember, setRemember] = useState(false);
+
+  // Redirect if already authenticated - with guard to prevent multiple navigations
+  useEffect(() => {
+    if (isAuthenticated && !hasRedirected) {
+      setHasRedirected(true);
+      navigate("/admin/dashboard", { replace: true });
+    }
+  }, [isAuthenticated, navigate, hasRedirected]);
+
+  // Load saved email on mount
+  useEffect(() => {
+    const savedEmail = localStorage.getItem("adminEmail");
+    // const savedPassword = localStorage.getItem("adminPassword");
+    const wasRemembered = localStorage.getItem("rememberMe") === "true";
+
+    if (wasRemembered && savedEmail) {
+      setEmail(savedEmail);
+      // setPassword(savedPassword);
+      setRemember(true);
+    }
+  }, []);
+
+  // NO ERROR HANDLING USEEFFECT - Handle errors directly in the submit handler
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      // Mock authentication - in production, this would validate against backend
-      if (email && password) {
-        localStorage.setItem("adminAuthenticated", "true");
+    if (!email || !password) {
+      toast.error("Please enter both email and password");
+      return;
+    }
+
+    const result = await dispatch(loginAdmin({ email, password }));
+
+    if (result.meta.requestStatus === "rejected") {
+      const errorMessage =
+        result.payload?.message || result.error?.message || "Login failed";
+
+      toast.error(errorMessage);
+    } else if (result.meta.requestStatus === "fulfilled") {
+      // Save ONLY email (not password)
+      if (remember) {
         localStorage.setItem("adminEmail", email);
-        toast.success("Login successful");
-        navigate("/admin/dashboard");
+        localStorage.setItem("adminPassword", password); // ⚠️ insecure
+        localStorage.setItem("rememberMe", "true");
       } else {
-        toast.error("Please enter valid credentials");
+        localStorage.removeItem("adminEmail");
+        localStorage.removeItem("adminPassword");
+        localStorage.removeItem("rememberMe");
       }
-      setIsLoading(false);
-    }, 1000);
+
+      toast.success("Login successful");
+
+      setHasRedirected(true);
+      navigate("/admin/dashboard", { replace: true });
+    }
   };
 
   return (
@@ -117,24 +161,26 @@ export function AdminLoginPage() {
               <label className="flex items-center space-x-2 cursor-pointer">
                 <input
                   type="checkbox"
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
                   className="w-4 h-4 rounded border-gray-300 text-[#8B2635] focus:ring-[#8B2635]"
                 />
                 <span className="text-gray-600">Remember me</span>
               </label>
-              <a
-                href="#"
+              <Link
+                to="/admin/forgot-password"
                 className="text-[#8B2635] hover:text-[#d4af37] transition-colors"
               >
                 Forgot password?
-              </a>
+              </Link>
             </div>
 
             <Button
               type="submit"
               className="w-full h-11 bg-[#8B2635] hover:bg-[#6d1d28] text-white transition-all duration-300 shadow-md hover:shadow-lg"
-              disabled={isLoading}
+              disabled={loading}
             >
-              {isLoading ? (
+              {loading ? (
                 <div className="flex items-center justify-center space-x-2">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   <span>Signing in...</span>
@@ -148,24 +194,16 @@ export function AdminLoginPage() {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Need access?{" "}
-              <a
-                href="#"
+              <Link
+                to="/admin/contact"
                 className="text-[#8B2635] hover:text-[#d4af37] transition-colors"
               >
                 Contact administrator
-              </a>
+              </Link>
             </p>
           </div>
         </CardContent>
       </Card>
-
-      {/* Demo Credentials Info */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-sm rounded-lg p-4 shadow-lg max-w-md w-full mx-4">
-        <p className="text-sm text-center text-gray-700">
-          <span className="font-semibold text-[#8B2635]">Demo:</span> Use any
-          email and password to login
-        </p>
-      </div>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import "./App.css";
+import { useEffect } from "react";
 import Layout from "./layout/Layout";
-import { Routes, Route } from "react-router";
+import { Routes, Route } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import AboutPage from "./pages/AboutPage";
 import { ContactPage } from "./pages/ContactPage";
@@ -10,15 +11,15 @@ import { MassSchedulePage } from "./pages/MassSchedulePage";
 import { SacramentDetailPage } from "./pages/SacramentDetailPage";
 import { SacramentsPage } from "./pages/SacramentsPage";
 import { BookingPage } from "./pages/BookingPage";
-
+import { Toaster } from "sonner";
 import ThanksgivingBooking from "./UiComponents/ThanksgivingBooking";
-import { ForgotPassword } from "./UiComponents/ForgotPassword";
+import { ForgotPassword } from "./Adminpages/ForgotPassword";
 import ParishRegistrationForm from "./UiComponents/ParishRegistrationForm";
 import PagenotFound from "./pages/PagenotFound";
 import { CookieBanner } from "./UiComponents/CookieBanner";
 import { useInactivity } from "./utils/useInactivity";
 import { LockScreen } from "./UiComponents/LockScreen";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 
 // Import Admin Components
 import { AdminLoginPage } from "./Adminpages/AdminLoginPage";
@@ -35,22 +36,46 @@ import { AdminMassBooking } from "./Adminpages/Adminmassbooking";
 import { AdminEvents } from "./Adminpages/Adminevents";
 import { AdminParishioners } from "./Adminpages/Adminparishioners";
 import { AdminReviews } from "./Adminpages/Adminreviews";
+import { getCurrentAdmin } from "./Redux/slice/adminSlice";
 
 function App() {
+  const dispatch = useDispatch();
   useInactivity(); // starts the inactivity timer
   const { isLocked } = useSelector((state) => state.lock);
+
+  // Check if user is authenticated on app load
+  useEffect(() => {
+    const checkAuth = async () => {
+      // Only check if we're on an admin route
+      if (
+        window.location.pathname.startsWith("/admin") &&
+        window.location.pathname !== "/admin/login" &&
+        window.location.pathname !== "/admin/forgot-password"
+      ) {
+        try {
+          await dispatch(getCurrentAdmin());
+        } catch (error) {
+          // If getCurrentAdmin fails, user will be redirected by ProtectedRoute
+          console.log("Not authenticated");
+        }
+      }
+    };
+
+    checkAuth();
+  }, [dispatch]);
 
   return (
     <>
       {isLocked && <LockScreen />}
       <CookieBanner />
+      {/* ✅ SONNER TOASTER ADDED HERE */}
+      <Toaster position="top-right" richColors expand={true} closeButton />
       <Routes>
-        {/* Existing Admin Login (if you want to keep it) */}
-
-        <Route path="/admin-forgot-password" element={<ForgotPassword />} />
-
-        {/* New Admin Routes */}
+        {/* Admin Login and Password Reset */}
         <Route path="/admin/login" element={<AdminLoginPage />} />
+        <Route path="/admin/forgot-password" element={<ForgotPassword />} />
+
+        {/* Protected Admin Routes */}
         <Route
           path="/admin"
           element={

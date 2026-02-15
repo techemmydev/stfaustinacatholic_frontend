@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router";
+import { useDispatch, useSelector } from "react-redux";
 import {
   LayoutDashboard,
   Calendar,
@@ -14,17 +15,25 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { logoutAdmin } from "../Redux/slice/adminSlice";
 
 export function AdminLayout() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { currentAdmin } = useSelector((state) => state.admin);
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
-  const navigate = useNavigate();
 
-  const handleLogout = () => {
-    localStorage.removeItem("adminAuthenticated");
-    localStorage.removeItem("adminEmail");
-    toast.success("Logged out successfully");
-    navigate("/admin/login");
+  const handleLogout = async () => {
+    const result = await dispatch(logoutAdmin());
+
+    if (result.error) {
+      toast.error(result.payload || "Logout failed");
+    } else {
+      toast.success("Logged out successfully");
+      navigate("/admin/login", { replace: true });
+    }
   };
 
   const navigationItems = [
@@ -43,7 +52,6 @@ export function AdminLayout() {
       path: "/admin/priests",
       icon: Users,
     },
-
     {
       name: "Mass Schedule",
       path: "/admin/mass-schedule",
@@ -64,7 +72,6 @@ export function AdminLayout() {
       path: "/admin/parishioners",
       icon: Users,
     },
-
     {
       name: "Admin Users",
       path: "/admin/users",
@@ -77,7 +84,10 @@ export function AdminLayout() {
     },
   ];
 
-  const adminEmail = localStorage.getItem("adminEmail") || "admin@church.com";
+  // Get admin info from Redux state or fallback
+  const adminName = currentAdmin?.name || "Admin User";
+  const adminEmail = currentAdmin?.email || "admin@church.com";
+  const adminRole = currentAdmin?.role || "Administrator";
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -125,15 +135,17 @@ export function AdminLayout() {
             <div className="flex items-center px-4 py-3 mb-2 bg-white/5 rounded-lg">
               <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#d4af37] flex items-center justify-center">
                 <span
-                  className="text-[#1e3a5f]"
+                  className="text-[#1e3a5f] font-semibold"
                   style={{ fontFamily: "Playfair Display, serif" }}
                 >
-                  {adminEmail.charAt(0).toUpperCase()}
+                  {adminName.charAt(0).toUpperCase()}
                 </span>
               </div>
               <div className="ml-3 flex-1 min-w-0">
-                <p className="text-sm text-white truncate">{adminEmail}</p>
-                <p className="text-xs text-gray-400">Administrator</p>
+                <p className="text-sm font-medium text-white truncate">
+                  {adminName}
+                </p>
+                <p className="text-xs text-gray-400">{adminRole}</p>
               </div>
             </div>
             <Button
@@ -206,15 +218,17 @@ export function AdminLayout() {
               <div className="flex items-center px-4 py-3 mb-2 bg-white/5 rounded-lg">
                 <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#d4af37] flex items-center justify-center">
                   <span
-                    className="text-[#1e3a5f]"
+                    className="text-[#1e3a5f] font-semibold"
                     style={{ fontFamily: "Playfair Display, serif" }}
                   >
-                    {adminEmail.charAt(0).toUpperCase()}
+                    {adminName.charAt(0).toUpperCase()}
                   </span>
                 </div>
                 <div className="ml-3 flex-1 min-w-0">
-                  <p className="text-sm text-white truncate">{adminEmail}</p>
-                  <p className="text-xs text-gray-400">Administrator</p>
+                  <p className="text-sm font-medium text-white truncate">
+                    {adminName}
+                  </p>
+                  <p className="text-xs text-gray-400">{adminRole}</p>
                 </div>
               </div>
               <Button
@@ -257,6 +271,21 @@ export function AdminLayout() {
                 <Bell className="w-5 h-5" />
                 <span className="absolute top-1 right-1 w-2 h-2 bg-[#8B2635] rounded-full"></span>
               </button>
+
+              {/* Desktop user info */}
+              <div className="hidden lg:flex items-center space-x-2">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#8B2635] to-[#d4af37] flex items-center justify-center">
+                  <span
+                    className="text-white text-sm font-semibold"
+                    style={{ fontFamily: "Playfair Display, serif" }}
+                  >
+                    {adminName.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div className="text-sm">
+                  <p className="text-gray-900 font-medium">{adminName}</p>
+                </div>
+              </div>
             </div>
           </div>
         </header>

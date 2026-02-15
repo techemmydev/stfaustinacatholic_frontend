@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import {
   UserPlus,
   Mail,
@@ -10,7 +11,6 @@ import {
   UserX,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,46 +37,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import {
+  fetchAllAdmins,
+  createAdmin,
+  updateAdmin,
+  toggleAdminStatus,
+  deleteAdmin,
+} from "../Redux/slice/adminSlice";
 
 export function AdminUsersPage() {
-  const [users, setUsers] = useState([
-    {
-      id: 1,
-      name: "Parish Administrator",
-      email: "admin@church.com",
-      role: "Super Admin",
-      status: "Active",
-      createdAt: "2024-01-15",
-      lastLogin: "2026-02-08 09:30 AM",
-    },
-    {
-      id: 2,
-      name: "Fr. John Smith",
-      email: "fr.john@church.com",
-      role: "Admin",
-      status: "Active",
-      createdAt: "2024-03-20",
-      lastLogin: "2026-02-07 02:15 PM",
-    },
-    {
-      id: 3,
-      name: "Maria Santos",
-      email: "maria.s@church.com",
-      role: "Staff",
-      status: "Active",
-      createdAt: "2024-06-10",
-      lastLogin: "2026-02-08 08:00 AM",
-    },
-    {
-      id: 4,
-      name: "John Doe",
-      email: "john.d@church.com",
-      role: "Staff",
-      status: "Inactive",
-      createdAt: "2023-11-05",
-      lastLogin: "2025-12-20 04:30 PM",
-    },
-  ]);
+  const dispatch = useDispatch();
+  const { admins, adminsLoading, actionLoading } = useSelector(
+    (state) => state.admin,
+  );
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -86,6 +59,7 @@ export function AdminUsersPage() {
   const [newUser, setNewUser] = useState({
     name: "",
     email: "",
+    password: "",
     role: "Staff",
   });
 
@@ -96,78 +70,76 @@ export function AdminUsersPage() {
     role: "Staff",
   });
 
-  const handleAddUser = () => {
-    if (!newUser.name || !newUser.email) {
+  // Fetch admins on mount
+  useEffect(() => {
+    dispatch(fetchAllAdmins());
+  }, [dispatch]);
+
+  // NO ERROR HANDLING USEEFFECT - Handle errors directly in action handlers
+
+  const handleAddUser = async () => {
+    if (!newUser.name || !newUser.email || !newUser.password) {
       toast.error("Please fill in all required fields");
       return;
     }
 
-    const user = {
-      id: users.length + 1,
-      name: newUser.name,
-      email: newUser.email,
-      role: newUser.role,
-      status: "Active",
-      createdAt: new Date().toISOString().split("T")[0],
-      lastLogin: "Never",
-    };
+    const result = await dispatch(createAdmin(newUser));
 
-    setUsers([...users, user]);
-    toast.success(`Invitation sent to ${newUser.email}`);
-
-    // Reset form
-    setNewUser({ name: "", email: "", role: "Staff" });
-    setDialogOpen(false);
+    if (result.error) {
+      toast.error(result.payload || "Failed to create admin");
+    } else {
+      toast.success(`Admin user created successfully`);
+      setNewUser({ name: "", email: "", password: "", role: "Staff" });
+      setDialogOpen(false);
+      dispatch(fetchAllAdmins()); // Refresh list
+    }
   };
 
-  const handleEditUser = () => {
+  const handleEditUser = async () => {
     if (!selectedUser) return;
 
-    setUsers(
-      users.map((user) =>
-        user.id === selectedUser.id
-          ? {
-              ...user,
-              name: editUser.name,
-              email: editUser.email,
-              role: editUser.role,
-            }
-          : user,
-      ),
+    const result = await dispatch(
+      updateAdmin({
+        id: selectedUser._id,
+        data: editUser,
+      }),
     );
 
-    toast.success("User updated successfully");
-    setEditDialogOpen(false);
-    setSelectedUser(null);
+    if (result.error) {
+      toast.error(result.payload || "Failed to update user");
+    } else {
+      toast.success("User updated successfully");
+      setEditDialogOpen(false);
+      setSelectedUser(null);
+      dispatch(fetchAllAdmins()); // Refresh list
+    }
   };
 
-  const handleToggleStatus = (id) => {
-    setUsers(
-      users.map((user) =>
-        user.id === id
-          ? {
-              ...user,
-              status: user.status === "Active" ? "Inactive" : "Active",
-            }
-          : user,
-      ),
-    );
+  const handleToggleStatus = async (id, currentStatus) => {
+    const result = await dispatch(toggleAdminStatus(id));
 
-    const user = users.find((u) => u.id === id);
-    toast.success(
-      `${user?.name} ${user?.status === "Active" ? "deactivated" : "activated"}`,
-    );
+    if (result.error) {
+      toast.error(result.payload || "Failed to toggle status");
+    } else {
+      const action = currentStatus === "Active" ? "deactivated" : "activated";
+      toast.success(`User ${action} successfully`);
+      dispatch(fetchAllAdmins()); // Refresh list
+    }
   };
 
-  const handleDeleteUser = (id) => {
-    const user = users.find((u) => u.id === id);
-    if (user?.role === "Super Admin") {
+  const handleDeleteUser = async (id, role) => {
+    if (role === "Super Admin") {
       toast.error("Cannot delete Super Admin account");
       return;
     }
 
-    setUsers(users.filter((user) => user.id !== id));
-    toast.success("User deleted successfully");
+    const result = await dispatch(deleteAdmin(id));
+
+    if (result.error) {
+      toast.error(result.payload || "Failed to delete user");
+    } else {
+      toast.success("User deleted successfully");
+    }
   };
 
   const openEditDialog = (user) => {
@@ -217,6 +189,24 @@ export function AdminUsersPage() {
     );
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return "Never";
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  const formatLastLogin = (dateString) => {
+    if (!dateString) return "Never";
+    return new Date(dateString).toLocaleString();
+  };
+
+  if (adminsLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="w-8 h-8 border-4 border-[#8B2635] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -236,7 +226,7 @@ export function AdminUsersPage() {
           className="bg-[#8B2635] hover:bg-[#6d1d28] text-white"
         >
           <UserPlus className="w-4 h-4 mr-2" />
-          Invite Admin User
+          Add Admin User
         </Button>
       </div>
 
@@ -251,7 +241,7 @@ export function AdminUsersPage() {
                   className="text-2xl text-[#1e3a5f]"
                   style={{ fontFamily: "Playfair Display, serif" }}
                 >
-                  {users.length}
+                  {admins.length}
                 </h3>
               </div>
               <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
@@ -270,7 +260,7 @@ export function AdminUsersPage() {
                   className="text-2xl text-[#1e3a5f]"
                   style={{ fontFamily: "Playfair Display, serif" }}
                 >
-                  {users.filter((u) => u.status === "Active").length}
+                  {admins.filter((u) => u.status === "Active").length}
                 </h3>
               </div>
               <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
@@ -289,7 +279,7 @@ export function AdminUsersPage() {
                   className="text-2xl text-[#1e3a5f]"
                   style={{ fontFamily: "Playfair Display, serif" }}
                 >
-                  {users.filter((u) => u.status === "Inactive").length}
+                  {admins.filter((u) => u.status === "Inactive").length}
                 </h3>
               </div>
               <div className="w-12 h-12 bg-red-50 rounded-lg flex items-center justify-center">
@@ -308,7 +298,7 @@ export function AdminUsersPage() {
                   className="text-2xl text-[#1e3a5f]"
                   style={{ fontFamily: "Playfair Display, serif" }}
                 >
-                  {users.filter((u) => u.role === "Super Admin").length}
+                  {admins.filter((u) => u.role === "Super Admin").length}
                 </h3>
               </div>
               <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
@@ -355,9 +345,9 @@ export function AdminUsersPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {users.map((user) => (
+                {admins.map((user) => (
                   <tr
-                    key={user.id}
+                    key={user._id}
                     className="hover:bg-gray-50 transition-colors"
                   >
                     <td className="px-6 py-4">
@@ -387,10 +377,10 @@ export function AdminUsersPage() {
                       {getStatusBadge(user.status)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {user.createdAt}
+                      {formatDate(user.createdAt)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {user.lastLogin}
+                      {formatLastLogin(user.lastLogin)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <DropdownMenu>
@@ -407,7 +397,9 @@ export function AdminUsersPage() {
                             Edit User
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => handleToggleStatus(user.id)}
+                            onClick={() =>
+                              handleToggleStatus(user._id, user.status)
+                            }
                           >
                             {user.status === "Active" ? (
                               <>
@@ -423,7 +415,9 @@ export function AdminUsersPage() {
                           </DropdownMenuItem>
                           {user.role !== "Super Admin" && (
                             <DropdownMenuItem
-                              onClick={() => handleDeleteUser(user.id)}
+                              onClick={() =>
+                                handleDeleteUser(user._id, user.role)
+                              }
                               className="text-red-600"
                             >
                               <Trash2 className="w-4 h-4 mr-2" />
@@ -449,10 +443,10 @@ export function AdminUsersPage() {
               className="text-2xl text-[#1e3a5f]"
               style={{ fontFamily: "Playfair Display, serif" }}
             >
-              Invite New Admin User
+              Add New Admin User
             </DialogTitle>
             <DialogDescription>
-              Send an invitation email to add a new administrator to the system
+              Create a new administrator account
             </DialogDescription>
           </DialogHeader>
 
@@ -478,6 +472,19 @@ export function AdminUsersPage() {
                 value={newUser.email}
                 onChange={(e) =>
                   setNewUser({ ...newUser, email: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Password *</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Enter password"
+                value={newUser.password}
+                onChange={(e) =>
+                  setNewUser({ ...newUser, password: e.target.value })
                 }
               />
             </div>
@@ -513,10 +520,20 @@ export function AdminUsersPage() {
             </Button>
             <Button
               onClick={handleAddUser}
+              disabled={actionLoading}
               className="bg-[#8B2635] hover:bg-[#6d1d28] text-white"
             >
-              <Mail className="w-4 h-4 mr-2" />
-              Send Invitation
+              {actionLoading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Mail className="w-4 h-4 mr-2" />
+                  Create Admin
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -591,9 +608,17 @@ export function AdminUsersPage() {
             </Button>
             <Button
               onClick={handleEditUser}
+              disabled={actionLoading}
               className="bg-[#8B2635] hover:bg-[#6d1d28] text-white"
             >
-              Save Changes
+              {actionLoading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

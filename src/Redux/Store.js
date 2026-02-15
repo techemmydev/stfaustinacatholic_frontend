@@ -8,7 +8,7 @@ import contactReducer from "./slice/contactsSlice";
 import invitationReducer from "./slice/invitationSlice";
 import testimonialReducer from "./slice/testimonialSlice";
 import thanksgivingReducer from "./slice/thanksgivingSlice";
-
+import adminReducer from "./slice/adminSlice";
 export const store = configureStore({
   reducer: {
     parishRegister: parishRegisterReducer,
@@ -19,5 +19,6 @@ export const store = configureStore({
     invitation: invitationReducer,
     testimonial: testimonialReducer,
     thanksgiving: thanksgivingReducer,
+    admin: adminReducer,
   },
 });
