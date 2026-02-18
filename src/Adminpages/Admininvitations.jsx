@@ -1,14 +1,6 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  Search,
-  Check,
-  X,
-  Eye,
-  Trash2,
-  MessageSquare,
-  EyeOff,
-} from "lucide-react";
+import { Search, Check, X, Eye, Trash2, Mail, User, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,77 +16,68 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import {
-  fetchAllTestimonialsAdmin,
-  approveTestimonial,
-  rejectTestimonial,
-  deleteTestimonial,
-  toggleTestimonialVisibility,
-} from "../Redux/slice/testimonialSlice";
+  fetchAllInvitationsAdmin,
+  acceptInvitation,
+  rejectInvitation,
+  deleteInvitation,
+} from "../Redux/slice/invitationSlice";
 
-export function AdminReviews() {
+export function AdminInvitations() {
   const dispatch = useDispatch();
-  const { adminTestimonials, loading, actionLoading } = useSelector(
-    (state) => state.testimonial,
+  const { adminInvitations, loading, actionLoading } = useSelector(
+    (state) => state.invitation,
   );
 
-  const [selectedReview, setSelectedReview] = useState(null);
+  const [selectedInvitation, setSelectedInvitation] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
 
-  // Fetch all testimonials on mount
+  // Fetch all invitations on mount
   useEffect(() => {
-    dispatch(fetchAllTestimonialsAdmin());
+    dispatch(fetchAllInvitationsAdmin());
   }, [dispatch]);
 
-  const handleViewDetails = (review) => {
-    setSelectedReview(review);
+  const handleViewDetails = (invitation) => {
+    setSelectedInvitation(invitation);
     setDialogOpen(true);
   };
 
-  const handleApprove = async (id) => {
-    const result = await dispatch(approveTestimonial(id));
+  const handleAccept = async (id) => {
+    const result = await dispatch(acceptInvitation(id));
     if (result.error) {
-      toast.error(result.payload || "Failed to approve testimonial");
+      toast.error(result.payload || "Failed to accept invitation");
     } else {
-      toast.success("Testimonial approved and will be displayed on website");
+      toast.success("Invitation accepted successfully");
       setDialogOpen(false);
-      dispatch(fetchAllTestimonialsAdmin());
+      dispatch(fetchAllInvitationsAdmin());
     }
   };
 
   const handleReject = async (id) => {
-    const result = await dispatch(rejectTestimonial(id));
+    const result = await dispatch(rejectInvitation(id));
     if (result.error) {
-      toast.error(result.payload || "Failed to reject testimonial");
+      toast.error(result.payload || "Failed to reject invitation");
     } else {
-      toast.error("Testimonial rejected");
+      toast.error("Invitation rejected");
       setDialogOpen(false);
-      dispatch(fetchAllTestimonialsAdmin());
+      dispatch(fetchAllInvitationsAdmin());
     }
   };
 
   const handleDelete = async (id) => {
     if (
-      window.confirm("Are you sure you want to delete this review permanently?")
+      window.confirm(
+        "Are you sure you want to delete this invitation permanently?",
+      )
     ) {
-      const result = await dispatch(deleteTestimonial(id));
+      const result = await dispatch(deleteInvitation(id));
       if (result.error) {
-        toast.error(result.payload || "Failed to delete testimonial");
+        toast.error(result.payload || "Failed to delete invitation");
       } else {
-        toast.success("Review deleted successfully");
+        toast.success("Invitation deleted successfully");
         setDialogOpen(false);
       }
-    }
-  };
-
-  const handleToggleVisibility = async (id) => {
-    const result = await dispatch(toggleTestimonialVisibility(id));
-    if (result.error) {
-      toast.error(result.payload || "Failed to toggle visibility");
-    } else {
-      toast.success("Visibility updated successfully");
-      dispatch(fetchAllTestimonialsAdmin());
     }
   };
 
@@ -106,10 +89,10 @@ export function AdminReviews() {
             Pending
           </Badge>
         );
-      case "approved":
+      case "accepted":
         return (
           <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
-            Approved
+            Accepted
           </Badge>
         );
       case "rejected":
@@ -123,37 +106,26 @@ export function AdminReviews() {
     }
   };
 
-  const getVisibilityBadge = (isVisible) => {
-    return isVisible ? (
-      <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
-        Visible
-      </Badge>
-    ) : (
-      <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-100">
-        Hidden
-      </Badge>
-    );
-  };
-
-  const filteredReviews = adminTestimonials.filter((review) => {
+  const filteredInvitations = adminInvitations.filter((invitation) => {
     const matchesSearch =
-      review.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      review.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      review.message.toLowerCase().includes(searchQuery.toLowerCase());
+      invitation.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      invitation.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (invitation.message &&
+        invitation.message.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    const matchesTab = activeTab === "all" || review.status === activeTab;
+    const matchesTab = activeTab === "all" || invitation.status === activeTab;
 
     return matchesSearch && matchesTab;
   });
 
-  const reviewCounts = {
-    all: adminTestimonials.length,
-    pending: adminTestimonials.filter((r) => r.status === "pending").length,
-    approved: adminTestimonials.filter((r) => r.status === "approved").length,
-    rejected: adminTestimonials.filter((r) => r.status === "rejected").length,
+  const invitationCounts = {
+    all: adminInvitations.length,
+    pending: adminInvitations.filter((inv) => inv.status === "pending").length,
+    accepted: adminInvitations.filter((inv) => inv.status === "accepted")
+      .length,
+    rejected: adminInvitations.filter((inv) => inv.status === "rejected")
+      .length,
   };
-
-  const visibleCount = adminTestimonials.filter((r) => r.isVisible).length;
 
   // Show loading spinner
   if (loading) {
@@ -172,10 +144,10 @@ export function AdminReviews() {
           className="text-2xl text-[#1e3a5f]"
           style={{ fontFamily: "Playfair Display, serif" }}
         >
-          Parishioner Testimonials
+          Parish Invitations
         </h2>
         <p className="text-gray-600 mt-1">
-          Manage and moderate parishioner testimonials and feedback
+          Manage invitation requests from parishioners
         </p>
       </div>
 
@@ -185,35 +157,16 @@ export function AdminReviews() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">Total Reviews</p>
+                <p className="text-sm text-gray-600 mb-1">Total Invitations</p>
                 <h3
                   className="text-3xl text-[#1e3a5f]"
                   style={{ fontFamily: "Playfair Display, serif" }}
                 >
-                  {reviewCounts.all}
+                  {invitationCounts.all}
                 </h3>
               </div>
               <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
-                <MessageSquare className="w-6 h-6 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-0 shadow-md">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Visible on Site</p>
-                <h3
-                  className="text-3xl text-[#1e3a5f]"
-                  style={{ fontFamily: "Playfair Display, serif" }}
-                >
-                  {visibleCount}
-                </h3>
-              </div>
-              <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
-                <Eye className="w-6 h-6 text-purple-600" />
+                <Mail className="w-6 h-6 text-blue-600" />
               </div>
             </div>
           </CardContent>
@@ -228,11 +181,11 @@ export function AdminReviews() {
                   className="text-3xl text-[#1e3a5f]"
                   style={{ fontFamily: "Playfair Display, serif" }}
                 >
-                  {reviewCounts.pending}
+                  {invitationCounts.pending}
                 </h3>
               </div>
               <div className="w-12 h-12 bg-orange-50 rounded-lg flex items-center justify-center">
-                <MessageSquare className="w-6 h-6 text-orange-600" />
+                <Clock className="w-6 h-6 text-orange-600" />
               </div>
             </div>
           </CardContent>
@@ -242,16 +195,35 @@ export function AdminReviews() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">Approved</p>
+                <p className="text-sm text-gray-600 mb-1">Accepted</p>
                 <h3
                   className="text-3xl text-[#1e3a5f]"
                   style={{ fontFamily: "Playfair Display, serif" }}
                 >
-                  {reviewCounts.approved}
+                  {invitationCounts.accepted}
                 </h3>
               </div>
               <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
                 <Check className="w-6 h-6 text-green-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-md">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Rejected</p>
+                <h3
+                  className="text-3xl text-[#1e3a5f]"
+                  style={{ fontFamily: "Playfair Display, serif" }}
+                >
+                  {invitationCounts.rejected}
+                </h3>
+              </div>
+              <div className="w-12 h-12 bg-red-50 rounded-lg flex items-center justify-center">
+                <X className="w-6 h-6 text-red-600" />
               </div>
             </div>
           </CardContent>
@@ -264,7 +236,7 @@ export function AdminReviews() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <Input
-              placeholder="Search testimonials by name, role, or message..."
+              placeholder="Search invitations by name, email, or message..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 h-11"
@@ -284,38 +256,38 @@ export function AdminReviews() {
             value="all"
             className="data-[state=active]:bg-[#8B2635] data-[state=active]:text-white"
           >
-            All ({reviewCounts.all})
+            All ({invitationCounts.all})
           </TabsTrigger>
           <TabsTrigger
             value="pending"
             className="data-[state=active]:bg-orange-600 data-[state=active]:text-white"
           >
-            Pending ({reviewCounts.pending})
+            Pending ({invitationCounts.pending})
           </TabsTrigger>
           <TabsTrigger
-            value="approved"
+            value="accepted"
             className="data-[state=active]:bg-green-600 data-[state=active]:text-white"
           >
-            Approved ({reviewCounts.approved})
+            Accepted ({invitationCounts.accepted})
           </TabsTrigger>
           <TabsTrigger
             value="rejected"
             className="data-[state=active]:bg-red-600 data-[state=active]:text-white"
           >
-            Rejected ({reviewCounts.rejected})
+            Rejected ({invitationCounts.rejected})
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value={activeTab} className="space-y-4">
-          {filteredReviews.length === 0 ? (
+          {filteredInvitations.length === 0 ? (
             <Card className="border-0 shadow-md">
               <CardContent className="p-12 text-center">
-                <MessageSquare className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                <Mail className="w-16 h-16 mx-auto text-gray-300 mb-4" />
                 <h3
                   className="text-xl text-gray-600 mb-2"
                   style={{ fontFamily: "Playfair Display, serif" }}
                 >
-                  No testimonials found
+                  No invitations found
                 </h3>
                 <p className="text-gray-500">
                   Try adjusting your search or filters
@@ -329,7 +301,7 @@ export function AdminReviews() {
                   className="text-[#1e3a5f]"
                   style={{ fontFamily: "Playfair Display, serif" }}
                 >
-                  Testimonials
+                  Invitations
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
@@ -338,16 +310,16 @@ export function AdminReviews() {
                     <thead className="bg-gray-50 border-b">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">
-                          Parishioner
+                          Requester
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">
+                          Email
                         </th>
                         <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">
                           Message Preview
                         </th>
                         <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">
                           Status
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">
-                          Visibility
                         </th>
                         <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">
                           Date
@@ -358,9 +330,9 @@ export function AdminReviews() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {filteredReviews.map((review) => (
+                      {filteredInvitations.map((invitation) => (
                         <tr
-                          key={review._id}
+                          key={invitation._id}
                           className="hover:bg-gray-50 transition-colors"
                         >
                           <td className="px-6 py-4">
@@ -372,58 +344,56 @@ export function AdminReviews() {
                                     fontFamily: "Playfair Display, serif",
                                   }}
                                 >
-                                  {review.name.charAt(0)}
+                                  {invitation.name.charAt(0)}
                                 </span>
                               </div>
                               <div className="ml-4">
                                 <div className="text-sm font-medium text-gray-900">
-                                  {review.name}
-                                </div>
-                                <div className="text-sm text-gray-500">
-                                  {review.role}
+                                  {invitation.name}
                                 </div>
                               </div>
                             </div>
                           </td>
+                          <td className="px-6 py-4 text-sm text-gray-900">
+                            {invitation.email}
+                          </td>
                           <td className="px-6 py-4 max-w-xs">
-                            <p className="text-sm text-gray-700 line-clamp-2">
-                              {review.message}
+                            <p className="text-sm text-gray-700 line-clamp-1">
+                              {invitation.message || "No message provided"}
                             </p>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            {getStatusBadge(review.status)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {review.status === "approved" &&
-                              getVisibilityBadge(review.isVisible)}
+                            {getStatusBadge(invitation.status)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {new Date(review.createdAt).toLocaleDateString()}
+                            {new Date(
+                              invitation.createdAt,
+                            ).toLocaleDateString()}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
                             <div className="flex gap-2">
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => handleViewDetails(review)}
+                                onClick={() => handleViewDetails(invitation)}
                                 title="View Details"
                               >
                                 <Eye className="w-4 h-4" />
                               </Button>
-                              {review.status === "pending" && (
+                              {invitation.status === "pending" && (
                                 <>
                                   <Button
                                     size="sm"
-                                    onClick={() => handleApprove(review._id)}
+                                    onClick={() => handleAccept(invitation._id)}
                                     disabled={actionLoading}
                                     className="bg-green-600 hover:bg-green-700 text-white"
-                                    title="Approve"
+                                    title="Accept"
                                   >
                                     <Check className="w-4 h-4" />
                                   </Button>
                                   <Button
                                     size="sm"
-                                    onClick={() => handleReject(review._id)}
+                                    onClick={() => handleReject(invitation._id)}
                                     disabled={actionLoading}
                                     className="bg-red-600 hover:bg-red-700 text-white"
                                     title="Reject"
@@ -432,31 +402,10 @@ export function AdminReviews() {
                                   </Button>
                                 </>
                               )}
-                              {review.status === "approved" && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() =>
-                                    handleToggleVisibility(review._id)
-                                  }
-                                  disabled={actionLoading}
-                                  title={
-                                    review.isVisible
-                                      ? "Hide from Website"
-                                      : "Show on Website"
-                                  }
-                                >
-                                  {review.isVisible ? (
-                                    <EyeOff className="w-4 h-4" />
-                                  ) : (
-                                    <Eye className="w-4 h-4" />
-                                  )}
-                                </Button>
-                              )}
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => handleDelete(review._id)}
+                                onClick={() => handleDelete(invitation._id)}
                                 disabled={actionLoading}
                                 className="hover:bg-red-50 hover:text-red-700"
                                 title="Delete"
@@ -484,72 +433,68 @@ export function AdminReviews() {
               className="text-2xl text-[#1e3a5f]"
               style={{ fontFamily: "Playfair Display, serif" }}
             >
-              Testimonial Details
+              Invitation Details
             </DialogTitle>
             <DialogDescription>
-              Full testimonial and parishioner information
+              Full invitation information and message
             </DialogDescription>
           </DialogHeader>
 
-          {selectedReview && (
+          {selectedInvitation && (
             <div className="space-y-6">
               {/* Status Badge */}
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <span className="text-sm text-gray-600">Current Status</span>
-                <div className="flex items-center gap-2">
-                  {getStatusBadge(selectedReview.status)}
-                  {selectedReview.status === "approved" &&
-                    getVisibilityBadge(selectedReview.isVisible)}
-                </div>
+                {getStatusBadge(selectedInvitation.status)}
               </div>
 
-              {/* Parishioner Info */}
+              {/* Requester Info */}
               <div className="space-y-4">
                 <h4
                   className="text-lg text-[#1e3a5f]"
                   style={{ fontFamily: "Playfair Display, serif" }}
                 >
-                  Parishioner Information
+                  Requester Information
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="p-4 bg-gray-50 rounded-lg">
                     <p className="text-xs text-gray-500 mb-1">Name</p>
                     <p className="text-sm text-gray-900">
-                      {selectedReview.name}
+                      {selectedInvitation.name}
                     </p>
                   </div>
                   <div className="p-4 bg-gray-50 rounded-lg">
-                    <p className="text-xs text-gray-500 mb-1">Role</p>
+                    <p className="text-xs text-gray-500 mb-1">Email</p>
                     <p className="text-sm text-gray-900">
-                      {selectedReview.role}
+                      {selectedInvitation.email}
                     </p>
                   </div>
                   <div className="p-4 bg-gray-50 rounded-lg">
                     <p className="text-xs text-gray-500 mb-1">Submitted On</p>
                     <p className="text-sm text-gray-900">
-                      {new Date(selectedReview.createdAt).toLocaleString()}
+                      {new Date(selectedInvitation.createdAt).toLocaleString()}
                     </p>
                   </div>
                   <div className="p-4 bg-gray-50 rounded-lg">
                     <p className="text-xs text-gray-500 mb-1">ID</p>
                     <p className="text-sm text-gray-900 truncate">
-                      {selectedReview._id}
+                      {selectedInvitation._id}
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Testimonial Content */}
+              {/* Message */}
               <div className="space-y-3">
                 <h4
                   className="text-lg text-[#1e3a5f]"
                   style={{ fontFamily: "Playfair Display, serif" }}
                 >
-                  Full Testimonial
+                  Message
                 </h4>
                 <div className="p-4 bg-gray-50 rounded-lg">
                   <p className="text-gray-700 leading-relaxed">
-                    {selectedReview.message}
+                    {selectedInvitation.message || "No message provided"}
                   </p>
                 </div>
               </div>
@@ -565,7 +510,7 @@ export function AdminReviews() {
               Close
             </Button>
             <Button
-              onClick={() => handleDelete(selectedReview?._id)}
+              onClick={() => handleDelete(selectedInvitation?._id)}
               variant="outline"
               disabled={actionLoading}
               className="w-full sm:w-auto text-red-600 border-red-300 hover:bg-red-50"
@@ -573,29 +518,10 @@ export function AdminReviews() {
               <Trash2 className="w-4 h-4 mr-2" />
               Delete
             </Button>
-            {selectedReview?.status === "approved" && (
-              <Button
-                onClick={() => handleToggleVisibility(selectedReview._id)}
-                disabled={actionLoading}
-                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                {selectedReview.isVisible ? (
-                  <>
-                    <EyeOff className="w-4 h-4 mr-2" />
-                    Hide from Website
-                  </>
-                ) : (
-                  <>
-                    <Eye className="w-4 h-4 mr-2" />
-                    Show on Website
-                  </>
-                )}
-              </Button>
-            )}
-            {selectedReview?.status === "pending" && (
+            {selectedInvitation?.status === "pending" && (
               <>
                 <Button
-                  onClick={() => handleReject(selectedReview._id)}
+                  onClick={() => handleReject(selectedInvitation._id)}
                   disabled={actionLoading}
                   className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white"
                 >
@@ -603,12 +529,12 @@ export function AdminReviews() {
                   Reject
                 </Button>
                 <Button
-                  onClick={() => handleApprove(selectedReview._id)}
+                  onClick={() => handleAccept(selectedInvitation._id)}
                   disabled={actionLoading}
                   className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white"
                 >
                   <Check className="w-4 h-4 mr-2" />
-                  Approve
+                  Accept
                 </Button>
               </>
             )}

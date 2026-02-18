@@ -12,6 +12,8 @@ import {
   X,
   Bell,
   UserCog,
+  MessageSquare,
+  Mail,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -66,6 +68,16 @@ export function AdminLayout() {
       name: "Events",
       path: "/admin/events",
       icon: Calendar,
+    },
+    {
+      name: "Invitations",
+      path: "/admin/invitations",
+      icon: Mail,
+    },
+    {
+      name: "Testimonials",
+      path: "/admin/reviews",
+      icon: MessageSquare,
     },
     {
       name: "Parishioners",

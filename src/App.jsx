@@ -37,6 +37,7 @@ import { AdminEvents } from "./Adminpages/Adminevents";
 import { AdminParishioners } from "./Adminpages/Adminparishioners";
 import { AdminReviews } from "./Adminpages/Adminreviews";
 import { getCurrentAdmin } from "./Redux/slice/adminSlice";
+import { AdminInvitations } from "./Adminpages/Admininvitations";
 
 function App() {
   const dispatch = useDispatch();
@@ -92,6 +93,7 @@ function App() {
           <Route path="events" element={<AdminEvents />} />
           <Route path="parishioners" element={<AdminParishioners />} />
           <Route path="reviews" element={<AdminReviews />} />
+          <Route path="invitations" element={<AdminInvitations />} />
           <Route path="users" element={<AdminUsersPage />} />
           <Route path="settings" element={<AdminSettingsPage />} />
         </Route>
