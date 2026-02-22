@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Calendar, CheckCircle } from "lucide-react";
+import { Calendar, CheckCircle, Clock, Phone, Mail, User } from "lucide-react";
 import { toast } from "sonner";
 import {
   createAppointment,
   fetchAvailableSlots,
   resetAppointmentState,
-} from "../Redux/slice/BookingAppointSlice"; // update path as needed
+} from "../Redux/slice/BookingAppointSlice";
 
 const appointmentTypes = [
   { value: "mass", label: "Mass Attendance" },
@@ -18,23 +18,37 @@ const appointmentTypes = [
   { value: "general", label: "General Consultation" },
 ];
 
+// ─────────────────────────────────────────────────────────────
+// Defined OUTSIDE the component so it's a stable reference
+// and not recreated on every render.
+// ─────────────────────────────────────────────────────────────
+const initialFormData = {
+  name: "",
+  email: "",
+  phone: "",
+  appointmentType: "",
+  date: "",
+  time: "",
+  notes: "",
+};
+
+const formatDisplayDate = (dateStr) => {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+};
+
 export function BookingPage() {
   const dispatch = useDispatch();
   const { loading, success, error, availableSlots, slotsLoading } = useSelector(
     (state) => state.appointment,
   );
 
-  const resetFormData = () => ({
-    name: "",
-    email: "",
-    phone: "",
-    appointmentType: "",
-    date: "",
-    time: "",
-    notes: "",
-  });
-
-  const [formData, setFormData] = useState(resetFormData());
+  const [formData, setFormData] = useState({ ...initialFormData });
 
   // Fetch slots when date changes
   useEffect(() => {
@@ -55,9 +69,7 @@ export function BookingPage() {
 
   // Show toast on error from slice
   useEffect(() => {
-    if (error) {
-      toast.error(error);
-    }
+    if (error) toast.error(error);
   }, [error]);
 
   // Cleanup on unmount
@@ -72,7 +84,6 @@ export function BookingPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
     if (
       !formData.name ||
       !formData.email ||
@@ -84,26 +95,19 @@ export function BookingPage() {
       toast.error("Please fill in all required fields");
       return;
     }
-
     dispatch(createAppointment(formData));
   };
 
-  const formatDisplayDate = (dateStr) => {
-    const [year, month, day] = dateStr.split("-").map(Number);
-    const date = new Date(year, month - 1, day);
-    return date.toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+  const handleBookAnother = () => {
+    dispatch(resetAppointmentState());
+    setFormData({ ...initialFormData });
   };
 
-  // Success screen
+  // ── Success Screen ─────────────────────────────────────────────
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f9f7f4] py-16 px-4 font-inter">
-        <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8 text-center">
+      <div className="min-h-screen flex items-center justify-center bg-[#f9f7f4] py-16 px-4">
+        <div className="max-w-2xl w-full bg-white rounded-xl shadow-lg p-8 text-center">
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="w-12 h-12 text-green-600" />
           </div>
@@ -112,47 +116,44 @@ export function BookingPage() {
           </h2>
           <p className="text-lg text-[#666666] mb-6">
             Thank you for your appointment request. Our parish staff will review
-            your request and contact you within 24-48 hours.
+            your request and contact you within 24–48 hours.
           </p>
-          <div className="bg-[#f9f7f4] rounded-lg p-6 mb-6 text-left">
+
+          <div className="bg-[#f9f7f4] rounded-lg p-6 mb-6 text-left space-y-2 text-[#2d2d2d]">
             <h3 className="mb-4 text-[#1e3a5f]">Appointment Details</h3>
-            <div className="space-y-2 text-[#2d2d2d]">
+            <p>
+              <strong>Name:</strong> {formData.name}
+            </p>
+            <p>
+              <strong>Email:</strong> {formData.email}
+            </p>
+            <p>
+              <strong>Phone:</strong> {formData.phone}
+            </p>
+            <p>
+              <strong>Type:</strong>{" "}
+              {
+                appointmentTypes.find(
+                  (t) => t.value === formData.appointmentType,
+                )?.label
+              }
+            </p>
+            <p>
+              <strong>Date:</strong> {formatDisplayDate(formData.date)}
+            </p>
+            <p>
+              <strong>Time:</strong> {formData.time}
+            </p>
+            {formData.notes && (
               <p>
-                <strong>Name:</strong> {formData.name}
+                <strong>Notes:</strong> {formData.notes}
               </p>
-              <p>
-                <strong>Email:</strong> {formData.email}
-              </p>
-              <p>
-                <strong>Phone:</strong> {formData.phone}
-              </p>
-              <p>
-                <strong>Type:</strong>{" "}
-                {
-                  appointmentTypes.find(
-                    (t) => t.value === formData.appointmentType,
-                  )?.label
-                }
-              </p>
-              <p>
-                <strong>Date:</strong> {formatDisplayDate(formData.date)}
-              </p>
-              <p>
-                <strong>Time:</strong> {formData.time}
-              </p>
-              {formData.notes && (
-                <p>
-                  <strong>Notes:</strong> {formData.notes}
-                </p>
-              )}
-            </div>
+            )}
           </div>
+
           <button
-            onClick={() => {
-              dispatch(resetAppointmentState());
-              setFormData(resetFormData());
-            }}
-            className="px-8 py-3 bg-[#8B2635] text-white rounded-full hover:bg-[#6d1d2a]"
+            onClick={handleBookAnother}
+            className="px-8 py-3 bg-[#8B2635] text-white rounded-full hover:bg-[#6d1d2a] transition-colors"
           >
             Book Another Appointment
           </button>
@@ -161,10 +162,11 @@ export function BookingPage() {
     );
   }
 
+  // ── Booking Form ───────────────────────────────────────────────
   return (
     <div>
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-[#1e3a5f] to-[#8B2635] py-20 text-white font-inter">
+      {/* Hero */}
+      <section className="bg-gradient-to-br from-[#1e3a5f] to-[#8B2635] py-20 text-white">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <div className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-6">
             <Calendar className="w-10 h-10 text-[#d4af37]" />
@@ -177,21 +179,24 @@ export function BookingPage() {
         </div>
       </section>
 
-      {/* Booking Form */}
+      {/* Form + Sidebar */}
       <section className="py-16 max-w-7xl mx-auto px-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Form Section */}
+          {/* Form */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-lg p-8">
+            <div className="bg-white rounded-xl shadow-lg p-8">
               <h2 className="mb-6 text-2xl font-semibold text-[#1e3a5f]">
                 Appointment Details
               </h2>
 
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Personal Info */}
+                {/* Name & Email */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label htmlFor="name" className="block mb-2 font-medium">
+                    <label
+                      htmlFor="name"
+                      className="block mb-2 font-medium text-gray-700"
+                    >
                       Full Name *
                     </label>
                     <input
@@ -200,12 +205,15 @@ export function BookingPage() {
                       value={formData.name}
                       onChange={handleInputChange}
                       required
+                      placeholder="e.g. Maria Santos"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8B2635]"
                     />
                   </div>
-
                   <div>
-                    <label htmlFor="email" className="block mb-2 font-medium">
+                    <label
+                      htmlFor="email"
+                      className="block mb-2 font-medium text-gray-700"
+                    >
                       Email *
                     </label>
                     <input
@@ -215,6 +223,7 @@ export function BookingPage() {
                       value={formData.email}
                       onChange={handleInputChange}
                       required
+                      placeholder="you@example.com"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8B2635]"
                     />
                   </div>
@@ -222,7 +231,10 @@ export function BookingPage() {
 
                 {/* Phone */}
                 <div>
-                  <label htmlFor="phone" className="block mb-2 font-medium">
+                  <label
+                    htmlFor="phone"
+                    className="block mb-2 font-medium text-gray-700"
+                  >
                     Phone *
                   </label>
                   <input
@@ -231,6 +243,7 @@ export function BookingPage() {
                     value={formData.phone}
                     onChange={handleInputChange}
                     required
+                    placeholder="+1 (555) 000-0000"
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8B2635]"
                   />
                 </div>
@@ -239,7 +252,7 @@ export function BookingPage() {
                 <div>
                   <label
                     htmlFor="appointmentType"
-                    className="block mb-2 font-medium"
+                    className="block mb-2 font-medium text-gray-700"
                   >
                     Appointment Type *
                   </label>
@@ -251,7 +264,7 @@ export function BookingPage() {
                     required
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8B2635]"
                   >
-                    <option value="">Select...</option>
+                    <option value="">Select a type...</option>
                     {appointmentTypes.map((type) => (
                       <option key={type.value} value={type.value}>
                         {type.label}
@@ -263,7 +276,10 @@ export function BookingPage() {
                 {/* Date & Time */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label htmlFor="date" className="block mb-2 font-medium">
+                    <label
+                      htmlFor="date"
+                      className="block mb-2 font-medium text-gray-700"
+                    >
                       Pick a Date *
                     </label>
                     <input
@@ -273,12 +289,15 @@ export function BookingPage() {
                       value={formData.date}
                       onChange={handleInputChange}
                       required
+                      min={new Date().toISOString().split("T")[0]}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8B2635]"
                     />
                   </div>
-
                   <div>
-                    <label htmlFor="time" className="block mb-2 font-medium">
+                    <label
+                      htmlFor="time"
+                      className="block mb-2 font-medium text-gray-700"
+                    >
                       Choose Your Time *
                     </label>
                     <select
@@ -292,12 +311,12 @@ export function BookingPage() {
                     >
                       <option value="">
                         {slotsLoading
-                          ? "Loading..."
+                          ? "Loading slots..."
                           : !formData.date
                             ? "Pick a date first"
                             : availableSlots.length === 0
                               ? "No slots available"
-                              : "Select time"}
+                              : "Select a time"}
                       </option>
                       {availableSlots.map((slot) => (
                         <option key={slot.time} value={slot.time}>
@@ -311,17 +330,23 @@ export function BookingPage() {
 
                 {/* Notes */}
                 <div>
-                  <label htmlFor="notes" className="block mb-2 font-medium">
-                    Additional Notes
+                  <label
+                    htmlFor="notes"
+                    className="block mb-2 font-medium text-gray-700"
+                  >
+                    Additional Notes{" "}
+                    <span className="text-gray-400 font-normal">
+                      (optional)
+                    </span>
                   </label>
                   <textarea
                     id="notes"
                     name="notes"
                     value={formData.notes}
                     onChange={handleInputChange}
-                    rows="4"
-                    placeholder="Optional notes..."
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8B2635]"
+                    rows={4}
+                    placeholder="Any special requests or information we should know..."
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8B2635] resize-none"
                   />
                 </div>
 
@@ -329,7 +354,7 @@ export function BookingPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-[#8B2635] hover:bg-[#a0334b] text-white py-3 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-[#8B2635] hover:bg-[#6d1d2a] text-white py-3 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                 >
                   {loading ? "Submitting..." : "Submit Appointment Request"}
                 </button>
@@ -338,15 +363,49 @@ export function BookingPage() {
           </div>
 
           {/* Sidebar */}
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <h3 className="mb-4 text-xl font-semibold text-[#1e3a5f]">
-              Available Time Slots
-            </h3>
-            <p className="text-sm text-gray-600 leading-relaxed">
-              Monday–Friday: 9AM–5PM
-              <br />
-              Saturday: 10AM–2PM
-            </p>
+          <div className="space-y-6">
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="mb-4 text-xl font-semibold text-[#1e3a5f]">
+                Office Hours
+              </h3>
+              <div className="space-y-3 text-sm text-gray-600">
+                <div className="flex items-center gap-3">
+                  <Clock className="w-4 h-4 text-[#8B2635] flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-gray-800">Monday – Friday</p>
+                    <p>9:00 AM – 5:00 PM</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Clock className="w-4 h-4 text-[#8B2635] flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-gray-800">Saturday</p>
+                    <p>10:00 AM – 2:00 PM</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Clock className="w-4 h-4 text-[#8B2635] flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-gray-800">Sunday</p>
+                    <p>Closed</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-[#1e3a5f] text-white rounded-xl shadow-lg p-6">
+              <h3 className="mb-4 text-xl font-semibold">Need Help?</h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex items-center gap-3">
+                  <Phone className="w-4 h-4 text-[#d4af37] flex-shrink-0" />
+                  <span>+1 (555) 000-0000</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Mail className="w-4 h-4 text-[#d4af37] flex-shrink-0" />
+                  <span>parish@stfaustina.org</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>

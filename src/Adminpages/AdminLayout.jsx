@@ -50,6 +50,11 @@ export function AdminLayout() {
       icon: Calendar,
     },
     {
+      name: "Time Slots",
+      path: "/admin/time-slots",
+      icon: Calendar,
+    },
+    {
       name: "Priests",
       path: "/admin/priests",
       icon: Users,

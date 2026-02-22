@@ -1,5 +1,6 @@
-import React from "react";
-import { Link } from "react-router"; // ✅ fixed import
+import React, { useEffect } from "react";
+import { Link } from "react-router";
+import { useDispatch, useSelector } from "react-redux";
 import {
   Calendar,
   Heart,
@@ -7,44 +8,14 @@ import {
   Users,
   ChevronRight,
   Clock,
+  MapPin,
 } from "lucide-react";
 import Stats from "@/UiComponents/Stats";
 import Testimonial from "@/UiComponents/Testimonial";
 import FaithMediaSection from "@/UiComponents/FaithMediaSection";
 import Herosection from "@/UiComponents/Herosection";
 import MassBookingCTA from "@/UiComponents/MassBookingCTA";
-
-// Data (used directly inside the component)
-const upcomingEvents = [
-  {
-    id: 1,
-    title: "Sunday Mass",
-    date: "Every Sunday",
-    time: "8:00 AM, 10:30 AM, 6:00 PM",
-    type: "Regular Service",
-  },
-  {
-    id: 2,
-    title: "Advent Evening Prayer",
-    date: "December 15, 2025",
-    time: "7:00 PM",
-    type: "Special Event",
-  },
-  {
-    id: 3,
-    title: "Christmas Eve Mass",
-    date: "December 24, 2025",
-    time: "5:00 PM, 11:00 PM",
-    type: "Holiday Service",
-  },
-  {
-    id: 4,
-    title: "First Friday Adoration",
-    date: "First Friday Monthly",
-    time: "9:00 AM - 5:00 PM",
-    type: "Adoration",
-  },
-];
+import { fetchPublishedEvents } from "../Redux/slice/Eventslice";
 
 const quickLinks = [
   {
@@ -78,6 +49,26 @@ const quickLinks = [
 ];
 
 const HomePage = () => {
+  const dispatch = useDispatch();
+  const { publishedEvents, loading } = useSelector((state) => state.event);
+
+  useEffect(() => {
+    dispatch(fetchPublishedEvents());
+  }, [dispatch]);
+
+  // Only show upcoming events (date >= today), max 4
+  const upcomingEvents = publishedEvents
+    .filter((event) => new Date(event.date) >= new Date())
+    .slice(0, 4);
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
   return (
     <>
       <Herosection />
@@ -128,13 +119,14 @@ const HomePage = () => {
           </div>
         </section>
 
-        {/* Upcoming Events */}
+        {/* Upcoming Events — "View All" links to /events */}
         <section className="py-16 bg-[#f9f7f4]">
           <div className="max-w-7xl mx-auto px-4">
             <div className="flex justify-between items-center mb-12">
               <h2 className="text-[#1e3a5f] m-0 text-4xl font-semibold">
                 Upcoming Events
               </h2>
+              {/* ✅ Fixed: links to /events, not /mass-schedule */}
               <Link
                 to="/mass-schedule"
                 className="text-[#8B2635] hover:text-[#6d1d2a] flex items-center gap-1"
@@ -143,32 +135,70 @@ const HomePage = () => {
                 <ChevronRight className="w-4 h-4" />
               </Link>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {upcomingEvents.map((event) => (
-                <div
-                  key={event.id}
-                  className="bg-white rounded-lg shadow-md p-6 border border-gray-100 hover:shadow-lg transition-shadow"
-                >
-                  <div className="flex items-center gap-2 mb-3">
-                    <Calendar className="w-5 h-5 text-[#8B2635]" />
-                    <span className="text-sm text-[#8B2635]">{event.type}</span>
+
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="w-8 h-8 border-4 border-[#8B2635] border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : upcomingEvents.length === 0 ? (
+              <div className="text-center py-12">
+                <Calendar className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                <p className="text-gray-500 text-lg">
+                  No upcoming events at this time. Check back soon!
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {upcomingEvents.map((event) => (
+                  <div
+                    key={event._id}
+                    className="bg-white rounded-lg shadow-md border border-gray-100 hover:shadow-lg transition-shadow overflow-hidden"
+                  >
+                    {/* Event image */}
+                    {event.imageUrl ? (
+                      <div className="h-36 overflow-hidden">
+                        <img
+                          src={event.imageUrl}
+                          alt={event.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="h-36 bg-gradient-to-br from-[#1e3a5f]/10 to-[#8B2635]/10 flex items-center justify-center">
+                        <Calendar className="w-10 h-10 text-[#8B2635]/30" />
+                      </div>
+                    )}
+
+                    <div className="p-5">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs px-2 py-0.5 bg-[#f9f7f4] text-[#8B2635] rounded-full">
+                          {event.category}
+                        </span>
+                      </div>
+                      <h3 className="mb-3 text-[#1e3a5f] text-lg font-semibold leading-snug">
+                        {event.title}
+                      </h3>
+                      <div className="space-y-1.5 text-[#666666] text-sm">
+                        <p className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-[#d4af37] flex-shrink-0" />
+                          {formatDate(event.date)}
+                        </p>
+                        <p className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-[#d4af37] flex-shrink-0" />
+                          {event.time}
+                        </p>
+                        {event.location && (
+                          <p className="flex items-center gap-2">
+                            <MapPin className="w-4 h-4 text-[#d4af37] flex-shrink-0" />
+                            {event.location}
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <h3 className="mb-3 text-[#1e3a5f] text-2xl">
-                    {event.title}
-                  </h3>
-                  <div className="space-y-2 text-[#666666]">
-                    <p className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-[#d4af37]" />
-                      {event.date}
-                    </p>
-                    <p className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-[#d4af37]" />
-                      {event.time}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
@@ -178,21 +208,17 @@ const HomePage = () => {
             <h2 className="text-white mb-6 text-4xl font-bold">
               Join Us in Worship, Service, and Community
             </h2>
-
             <p className="text-xl mb-4 text-gray-200">
               Our parish is a place of prayer, compassion, and belonging.
               Whether you are visiting for the first time, seeking spiritual
               guidance, or looking for a parish to call home, we welcome you
               with open hearts.
             </p>
-
             <p className="text-lg mb-10 text-gray-300">
               Attend Mass, schedule an appointment with a priest, or register as
               a parishioner to enjoy full access to parish services and
               programs.
             </p>
-
-            {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 to="/register"
@@ -200,14 +226,12 @@ const HomePage = () => {
               >
                 Register as a Parishioner
               </Link>
-
               <Link
                 to="/book-appointment"
                 className="px-10 py-4 bg-white text-[#1e3a5f] rounded-full hover:bg-gray-100 transition-colors shadow-lg font-medium"
               >
                 Schedule an Appointment
               </Link>
-
               <Link
                 to="/contact"
                 className="px-10 py-4 border border-white/60 text-white rounded-full hover:bg-white/10 transition-colors shadow-lg font-medium"
@@ -215,12 +239,10 @@ const HomePage = () => {
                 Contact the Parish Office
               </Link>
             </div>
-
-            {/* Scripture / Message */}
             <p className="mt-10 text-sm text-gray-300 max-w-3xl mx-auto">
-              “They devoted themselves to the teaching of the apostles and to
+              "They devoted themselves to the teaching of the apostles and to
               the communal life, to the breaking of the bread and to the
-              prayers.”
+              prayers."
               <br />
               <span className="italic">— Acts 2:42</span>
             </p>

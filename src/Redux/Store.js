@@ -9,6 +9,9 @@ import invitationReducer from "./slice/invitationSlice";
 import testimonialReducer from "./slice/testimonialSlice";
 import thanksgivingReducer from "./slice/thanksgivingSlice";
 import adminReducer from "./slice/adminSlice";
+import timeSlotReducer from "./slice/Timeslotslice";
+import eventReducer from "./slice/Eventslice";
+import massScheduleReducer from "./slice/Massscheduleslice";
 export const store = configureStore({
   reducer: {
     parishRegister: parishRegisterReducer,
@@ -20,5 +23,8 @@ export const store = configureStore({
     testimonial: testimonialReducer,
     thanksgiving: thanksgivingReducer,
     admin: adminReducer,
+    event: eventReducer,
+    massSchedule: massScheduleReducer,
+    timeSlot: timeSlotReducer,
   },
 });

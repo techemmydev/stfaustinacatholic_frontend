@@ -31,13 +31,13 @@ import { AdminMassSchedulePage } from "./Adminpages/AdminMassSchedulePage";
 import { AdminSettingsPage } from "./Adminpages/AdminSettingsPage";
 import { AdminUsersPage } from "./Adminpages/AdminUsersPage";
 import { ProtectedRoute } from "./Adminpages/ProtectedRoute";
-
 import { AdminMassBooking } from "./Adminpages/Adminmassbooking";
 import { AdminEvents } from "./Adminpages/Adminevents";
 import { AdminParishioners } from "./Adminpages/Adminparishioners";
 import { AdminReviews } from "./Adminpages/Adminreviews";
 import { getCurrentAdmin } from "./Redux/slice/adminSlice";
 import { AdminInvitations } from "./Adminpages/Admininvitations";
+import { AdminTimeSlotsPage } from "./Adminpages/Admintimeslotspage";
 
 function App() {
   const dispatch = useDispatch();
@@ -87,6 +87,7 @@ function App() {
         >
           <Route path="dashboard" element={<AdminDashboardPage />} />
           <Route path="appointments" element={<AdminAppointmentsPage />} />
+          <Route path="time-slots" element={<AdminTimeSlotsPage />} />
           <Route path="mass-bookings" element={<AdminMassBooking />} />
           <Route path="priests" element={<AdminPriestsPage />} />
           <Route path="mass-schedule" element={<AdminMassSchedulePage />} />
