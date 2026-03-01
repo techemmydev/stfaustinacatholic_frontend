@@ -38,6 +38,7 @@ import { AdminReviews } from "./Adminpages/Adminreviews";
 import { getCurrentAdmin } from "./Redux/slice/adminSlice";
 import { AdminInvitations } from "./Adminpages/Admininvitations";
 import { AdminTimeSlotsPage } from "./Adminpages/Admintimeslotspage";
+import { AdminMassManagement } from "./Adminpages/Adminmassmanagement";
 
 function App() {
   const dispatch = useDispatch();
@@ -89,6 +90,7 @@ function App() {
           <Route path="appointments" element={<AdminAppointmentsPage />} />
           <Route path="time-slots" element={<AdminTimeSlotsPage />} />
           <Route path="mass-bookings" element={<AdminMassBooking />} />
+          <Route path="mass-management" element={<AdminMassManagement />} />
           <Route path="priests" element={<AdminPriestsPage />} />
           <Route path="mass-schedule" element={<AdminMassSchedulePage />} />
           <Route path="events" element={<AdminEvents />} />

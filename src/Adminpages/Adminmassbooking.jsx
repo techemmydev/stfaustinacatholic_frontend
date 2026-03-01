@@ -1,27 +1,20 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import {
   Search,
   Calendar,
   User,
   Mail,
-  Phone,
-  MapPin,
   Check,
   X,
   Eye,
-  Filter,
+  Trash2,
+  Clock,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -32,111 +25,70 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import {
+  fetchAllThanksgivingsAdmin,
+  approveThanksgiving,
+  rejectThanksgiving,
+  deleteThanksgiving,
+} from "../Redux/slice/thanksgivingSlice";
 
 export function AdminMassBooking() {
-  const [selectedBooking, setSelectedBooking] = useState(null);
+  const dispatch = useDispatch();
+  const { adminThanksgivings, loading, actionLoading } = useSelector(
+    (state) => state.thanksgiving,
+  );
+
+  const [selectedThanksgiving, setSelectedThanksgiving] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterMassType, setFilterMassType] = useState("all");
   const [activeTab, setActiveTab] = useState("all");
 
-  // Mock data - replace with API call
-  const [bookings, setBookings] = useState([
-    {
-      id: 1,
-      parishionerName: "Maria Santos",
-      email: "maria.santos@email.com",
-      phone: "+1 (555) 123-4567",
-      massType: "Thanksgiving Mass",
-      date: "2026-02-20",
-      time: "10:00 AM",
-      intention: "Thanksgiving for family blessings and good health",
-      numberOfAttendees: 15,
-      specialRequests: "Please include special prayer for my mother",
-      status: "pending",
-      submittedAt: "2026-02-08 09:30 AM",
-    },
-    {
-      id: 2,
-      parishionerName: "John Doe",
-      email: "john.doe@email.com",
-      phone: "+1 (555) 234-5678",
-      massType: "Memorial Mass",
-      date: "2026-02-25",
-      time: "9:00 AM",
-      intention: "In loving memory of my father, Robert Doe",
-      numberOfAttendees: 30,
-      specialRequests: "Family will provide flowers",
-      status: "approved",
-      submittedAt: "2026-02-01 02:15 PM",
-    },
-    {
-      id: 3,
-      parishionerName: "Sarah Johnson",
-      email: "sarah.j@email.com",
-      phone: "+1 (555) 345-6789",
-      massType: "Anniversary Mass",
-      date: "2026-03-10",
-      time: "11:00 AM",
-      intention: "50th Wedding Anniversary celebration",
-      numberOfAttendees: 40,
-      specialRequests: "Would like to renew vows during mass",
-      status: "pending",
-      submittedAt: "2026-02-07 11:20 AM",
-    },
-    {
-      id: 4,
-      parishionerName: "Michael Chen",
-      email: "michael.c@email.com",
-      phone: "+1 (555) 456-7890",
-      massType: "Healing Mass",
-      date: "2026-02-18",
-      time: "6:00 PM",
-      intention: "For healing and recovery of my sister",
-      numberOfAttendees: 10,
-      specialRequests: "None",
-      status: "rejected",
-      submittedAt: "2026-02-05 04:30 PM",
-    },
-    {
-      id: 5,
-      parishionerName: "Emily Rodriguez",
-      email: "emily.r@email.com",
-      phone: "+1 (555) 567-8901",
-      massType: "Thanksgiving Mass",
-      date: "2026-02-22",
-      time: "8:00 AM",
-      intention: "Thanksgiving for successful business venture",
-      numberOfAttendees: 20,
-      specialRequests: "None",
-      status: "pending",
-      submittedAt: "2026-02-08 10:45 AM",
-    },
-  ]);
+  // Fetch thanksgivings on mount
+  useEffect(() => {
+    dispatch(fetchAllThanksgivingsAdmin());
+  }, [dispatch]);
 
-  const handleViewDetails = (booking) => {
-    setSelectedBooking(booking);
+  const handleViewDetails = (thanksgiving) => {
+    setSelectedThanksgiving(thanksgiving);
     setDialogOpen(true);
   };
 
-  const handleApprove = (id) => {
-    setBookings((prev) =>
-      prev.map((booking) =>
-        booking.id === id ? { ...booking, status: "approved" } : booking,
-      ),
-    );
-    toast.success("Mass booking approved successfully");
-    setDialogOpen(false);
+  const handleApprove = async (id) => {
+    const result = await dispatch(approveThanksgiving(id));
+    if (result.error) {
+      toast.error(result.payload || "Failed to approve thanksgiving");
+    } else {
+      toast.success("Thanksgiving approved successfully");
+      setDialogOpen(false);
+      dispatch(fetchAllThanksgivingsAdmin());
+    }
   };
 
-  const handleReject = (id) => {
-    setBookings((prev) =>
-      prev.map((booking) =>
-        booking.id === id ? { ...booking, status: "rejected" } : booking,
-      ),
-    );
-    toast.error("Mass booking rejected");
-    setDialogOpen(false);
+  const handleReject = async (id) => {
+    const result = await dispatch(rejectThanksgiving(id));
+    if (result.error) {
+      toast.error(result.payload || "Failed to reject thanksgiving");
+    } else {
+      toast.error("Thanksgiving rejected");
+      setDialogOpen(false);
+      dispatch(fetchAllThanksgivingsAdmin());
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (
+      window.confirm(
+        "Are you sure you want to delete this thanksgiving permanently?",
+      )
+    ) {
+      const result = await dispatch(deleteThanksgiving(id));
+      if (result.error) {
+        toast.error(result.payload || "Failed to delete thanksgiving");
+      } else {
+        toast.success("Thanksgiving deleted successfully");
+        setDialogOpen(false);
+      }
+    }
   };
 
   const getStatusBadge = (status) => {
@@ -164,71 +116,60 @@ export function AdminMassBooking() {
     }
   };
 
-  const filteredBookings = bookings.filter((booking) => {
+  const filteredThanksgivings = adminThanksgivings.filter((thanksgiving) => {
     const matchesSearch =
-      booking.parishionerName
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase()) ||
-      booking.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      booking.massType.toLowerCase().includes(searchQuery.toLowerCase());
+      thanksgiving.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      thanksgiving.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (thanksgiving.mass?.name &&
+        thanksgiving.mass.name
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()));
 
-    const matchesMassType =
-      filterMassType === "all" || booking.massType === filterMassType;
-    const matchesTab = activeTab === "all" || booking.status === activeTab;
+    const matchesTab = activeTab === "all" || thanksgiving.status === activeTab;
 
-    return matchesSearch && matchesMassType && matchesTab;
+    return matchesSearch && matchesTab;
   });
 
-  const bookingCounts = {
-    all: bookings.length,
-    pending: bookings.filter((b) => b.status === "pending").length,
-    approved: bookings.filter((b) => b.status === "approved").length,
-    rejected: bookings.filter((b) => b.status === "rejected").length,
+  const thanksgivingCounts = {
+    all: adminThanksgivings.length,
+    pending: adminThanksgivings.filter((t) => t.status === "pending").length,
+    approved: adminThanksgivings.filter((t) => t.status === "approved").length,
+    rejected: adminThanksgivings.filter((t) => t.status === "rejected").length,
   };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  // Show loading spinner
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="w-8 h-8 border-4 border-[#8B2635] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header with Search and Filters */}
-      <Card className="border-0 shadow-md">
-        <CardHeader className="border-b bg-gray-50">
-          <CardTitle
-            className="text-[#1e3a5f]"
-            style={{ fontFamily: "Playfair Display, serif" }}
-          >
-            Mass Booking Management
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <Input
-                placeholder="Search by name, email, or mass type..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-11"
-              />
-            </div>
-            <Select value={filterMassType} onValueChange={setFilterMassType}>
-              <SelectTrigger className="w-full md:w-56 h-11">
-                <SelectValue placeholder="Filter by mass type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Mass Types</SelectItem>
-                <SelectItem value="Thanksgiving Mass">
-                  Thanksgiving Mass
-                </SelectItem>
-                <SelectItem value="Memorial Mass">Memorial Mass</SelectItem>
-                <SelectItem value="Anniversary Mass">
-                  Anniversary Mass
-                </SelectItem>
-                <SelectItem value="Healing Mass">Healing Mass</SelectItem>
-                <SelectItem value="Birthday Mass">Birthday Mass</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Header */}
+      <div>
+        <h2
+          className="text-2xl text-[#1e3a5f]"
+          style={{ fontFamily: "Playfair Display, serif" }}
+        >
+          Thanksgiving Mass Bookings
+        </h2>
+        <p className="text-gray-600 mt-1">
+          Manage thanksgiving mass intentions from parishioners
+        </p>
+      </div>
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -241,7 +182,7 @@ export function AdminMassBooking() {
                   className="text-3xl text-[#1e3a5f]"
                   style={{ fontFamily: "Playfair Display, serif" }}
                 >
-                  {bookingCounts.all}
+                  {thanksgivingCounts.all}
                 </h3>
               </div>
               <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
@@ -260,11 +201,11 @@ export function AdminMassBooking() {
                   className="text-3xl text-[#1e3a5f]"
                   style={{ fontFamily: "Playfair Display, serif" }}
                 >
-                  {bookingCounts.pending}
+                  {thanksgivingCounts.pending}
                 </h3>
               </div>
               <div className="w-12 h-12 bg-orange-50 rounded-lg flex items-center justify-center">
-                <Filter className="w-6 h-6 text-orange-600" />
+                <Clock className="w-6 h-6 text-orange-600" />
               </div>
             </div>
           </CardContent>
@@ -279,7 +220,7 @@ export function AdminMassBooking() {
                   className="text-3xl text-[#1e3a5f]"
                   style={{ fontFamily: "Playfair Display, serif" }}
                 >
-                  {bookingCounts.approved}
+                  {thanksgivingCounts.approved}
                 </h3>
               </div>
               <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
@@ -298,7 +239,7 @@ export function AdminMassBooking() {
                   className="text-3xl text-[#1e3a5f]"
                   style={{ fontFamily: "Playfair Display, serif" }}
                 >
-                  {bookingCounts.rejected}
+                  {thanksgivingCounts.rejected}
                 </h3>
               </div>
               <div className="w-12 h-12 bg-red-50 rounded-lg flex items-center justify-center">
@@ -308,6 +249,21 @@ export function AdminMassBooking() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Search */}
+      <Card className="border-0 shadow-md">
+        <CardContent className="p-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Input
+              placeholder="Search by name, email, or mass..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 h-11"
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Tabs for Status Filtering */}
       <Tabs
@@ -320,30 +276,30 @@ export function AdminMassBooking() {
             value="all"
             className="data-[state=active]:bg-[#8B2635] data-[state=active]:text-white"
           >
-            All ({bookingCounts.all})
+            All ({thanksgivingCounts.all})
           </TabsTrigger>
           <TabsTrigger
             value="pending"
             className="data-[state=active]:bg-orange-600 data-[state=active]:text-white"
           >
-            Pending ({bookingCounts.pending})
+            Pending ({thanksgivingCounts.pending})
           </TabsTrigger>
           <TabsTrigger
             value="approved"
             className="data-[state=active]:bg-green-600 data-[state=active]:text-white"
           >
-            Approved ({bookingCounts.approved})
+            Approved ({thanksgivingCounts.approved})
           </TabsTrigger>
           <TabsTrigger
             value="rejected"
             className="data-[state=active]:bg-red-600 data-[state=active]:text-white"
           >
-            Rejected ({bookingCounts.rejected})
+            Rejected ({thanksgivingCounts.rejected})
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value={activeTab} className="space-y-4">
-          {filteredBookings.length === 0 ? (
+          {filteredThanksgivings.length === 0 ? (
             <Card className="border-0 shadow-md">
               <CardContent className="p-12 text-center">
                 <Calendar className="w-16 h-16 mx-auto text-gray-300 mb-4" />
@@ -351,7 +307,7 @@ export function AdminMassBooking() {
                   className="text-xl text-gray-600 mb-2"
                   style={{ fontFamily: "Playfair Display, serif" }}
                 >
-                  No mass bookings found
+                  No thanksgiving bookings found
                 </h3>
                 <p className="text-gray-500">
                   Try adjusting your search or filters
@@ -360,6 +316,14 @@ export function AdminMassBooking() {
             </Card>
           ) : (
             <Card className="border-0 shadow-md">
+              <CardHeader className="border-b bg-gray-50">
+                <CardTitle
+                  className="text-[#1e3a5f]"
+                  style={{ fontFamily: "Playfair Display, serif" }}
+                >
+                  Thanksgiving Bookings
+                </CardTitle>
+              </CardHeader>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
                   <table className="w-full">
@@ -369,16 +333,16 @@ export function AdminMassBooking() {
                           Parishioner
                         </th>
                         <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">
-                          Mass Type
+                          Mass
                         </th>
                         <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">
-                          Date & Time
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">
-                          Attendees
+                          Intention Preview
                         </th>
                         <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">
                           Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">
+                          Submitted
                         </th>
                         <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">
                           Actions
@@ -386,9 +350,9 @@ export function AdminMassBooking() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {filteredBookings.map((booking) => (
+                      {filteredThanksgivings.map((thanksgiving) => (
                         <tr
-                          key={booking.id}
+                          key={thanksgiving._id}
                           className="hover:bg-gray-50 transition-colors"
                         >
                           <td className="px-6 py-4">
@@ -400,69 +364,86 @@ export function AdminMassBooking() {
                                     fontFamily: "Playfair Display, serif",
                                   }}
                                 >
-                                  {booking.parishionerName.charAt(0)}
+                                  {thanksgiving.name.charAt(0)}
                                 </span>
                               </div>
                               <div className="ml-4">
-                                <div className="text-sm text-gray-900">
-                                  {booking.parishionerName}
+                                <div className="text-sm font-medium text-gray-900">
+                                  {thanksgiving.name}
                                 </div>
                                 <div className="text-sm text-gray-500">
-                                  {booking.email}
+                                  {thanksgiving.email}
                                 </div>
                               </div>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900">
-                              {booking.massType}
+                              {thanksgiving.mass?.name || "N/A"}
                             </div>
-                            <div className="text-xs text-gray-500 max-w-xs truncate">
-                              {booking.intention}
-                            </div>
+                            {thanksgiving.mass?.time && (
+                              <div className="text-xs text-gray-500">
+                                {thanksgiving.mass.time}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 max-w-xs">
+                            <p className="text-sm text-gray-700 line-clamp-2">
+                              {thanksgiving.intention}
+                            </p>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">
-                              {booking.date}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {booking.time}
-                            </div>
+                            {getStatusBadge(thanksgiving.status)}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {booking.numberOfAttendees} people
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {getStatusBadge(booking.status)}
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {formatDate(thanksgiving.createdAt)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <div className="flex items-center space-x-2">
+                            <div className="flex gap-2">
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => handleViewDetails(booking)}
-                                className="hover:bg-gray-100"
+                                onClick={() => handleViewDetails(thanksgiving)}
+                                title="View Details"
                               >
                                 <Eye className="w-4 h-4" />
                               </Button>
-                              {booking.status === "pending" && (
+                              {thanksgiving.status === "pending" && (
                                 <>
                                   <Button
                                     size="sm"
-                                    onClick={() => handleApprove(booking.id)}
+                                    onClick={() =>
+                                      handleApprove(thanksgiving._id)
+                                    }
+                                    disabled={actionLoading}
                                     className="bg-green-600 hover:bg-green-700 text-white"
+                                    title="Approve"
                                   >
                                     <Check className="w-4 h-4" />
                                   </Button>
                                   <Button
                                     size="sm"
-                                    onClick={() => handleReject(booking.id)}
+                                    onClick={() =>
+                                      handleReject(thanksgiving._id)
+                                    }
+                                    disabled={actionLoading}
                                     className="bg-red-600 hover:bg-red-700 text-white"
+                                    title="Reject"
                                   >
                                     <X className="w-4 h-4" />
                                   </Button>
                                 </>
                               )}
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleDelete(thanksgiving._id)}
+                                disabled={actionLoading}
+                                className="hover:bg-red-50 hover:text-red-700"
+                                title="Delete"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
                             </div>
                           </td>
                         </tr>
@@ -484,22 +465,22 @@ export function AdminMassBooking() {
               className="text-2xl text-[#1e3a5f]"
               style={{ fontFamily: "Playfair Display, serif" }}
             >
-              Mass Booking Details
+              Thanksgiving Details
             </DialogTitle>
             <DialogDescription>
-              Review and manage this mass booking request
+              Full thanksgiving mass intention details
             </DialogDescription>
           </DialogHeader>
 
-          {selectedBooking && (
+          {selectedThanksgiving && (
             <div className="space-y-6">
               {/* Status Badge */}
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <span className="text-sm text-gray-600">Current Status</span>
-                {getStatusBadge(selectedBooking.status)}
+                {getStatusBadge(selectedThanksgiving.status)}
               </div>
 
-              {/* Parishioner Information */}
+              {/* Parishioner Info */}
               <div className="space-y-4">
                 <h4
                   className="text-lg text-[#1e3a5f]"
@@ -508,112 +489,67 @@ export function AdminMassBooking() {
                   Parishioner Information
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg">
-                    <User className="w-5 h-5 text-[#8B2635] mt-0.5" />
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1">Full Name</p>
-                      <p className="text-sm text-gray-900">
-                        {selectedBooking.parishionerName}
-                      </p>
-                    </div>
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <p className="text-xs text-gray-500 mb-1">Name</p>
+                    <p className="text-sm text-gray-900">
+                      {selectedThanksgiving.name}
+                    </p>
                   </div>
-                  <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg">
-                    <Mail className="w-5 h-5 text-[#8B2635] mt-0.5" />
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1">
-                        Email Address
-                      </p>
-                      <p className="text-sm text-gray-900">
-                        {selectedBooking.email}
-                      </p>
-                    </div>
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <p className="text-xs text-gray-500 mb-1">Email</p>
+                    <p className="text-sm text-gray-900">
+                      {selectedThanksgiving.email}
+                    </p>
                   </div>
-                  <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg">
-                    <Phone className="w-5 h-5 text-[#8B2635] mt-0.5" />
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1">Phone Number</p>
-                      <p className="text-sm text-gray-900">
-                        {selectedBooking.phone}
-                      </p>
-                    </div>
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <p className="text-xs text-gray-500 mb-1">Submitted On</p>
+                    <p className="text-sm text-gray-900">
+                      {formatDate(selectedThanksgiving.createdAt)}
+                    </p>
                   </div>
-                  <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg">
-                    <User className="w-5 h-5 text-[#8B2635] mt-0.5" />
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1">
-                        Number of Attendees
-                      </p>
-                      <p className="text-sm text-gray-900">
-                        {selectedBooking.numberOfAttendees} people
-                      </p>
-                    </div>
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <p className="text-xs text-gray-500 mb-1">Week Key</p>
+                    <p className="text-sm text-gray-900">
+                      {selectedThanksgiving.weekKey}
+                    </p>
                   </div>
                 </div>
               </div>
 
               {/* Mass Details */}
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <h4
                   className="text-lg text-[#1e3a5f]"
                   style={{ fontFamily: "Playfair Display, serif" }}
                 >
                   Mass Details
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg">
-                    <Calendar className="w-5 h-5 text-[#8B2635] mt-0.5" />
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1">Mass Type</p>
-                      <p className="text-sm text-gray-900">
-                        {selectedBooking.massType}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg">
-                    <Calendar className="w-5 h-5 text-[#8B2635] mt-0.5" />
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1">Date & Time</p>
-                      <p className="text-sm text-gray-900">
-                        {selectedBooking.date} at {selectedBooking.time}
-                      </p>
-                    </div>
-                  </div>
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <p className="text-xs text-gray-500 mb-1">Mass</p>
+                  <p className="text-sm text-gray-900">
+                    {selectedThanksgiving.mass?.name || "N/A"}
+                  </p>
+                  {selectedThanksgiving.mass?.time && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Time: {selectedThanksgiving.mass.time}
+                    </p>
+                  )}
                 </div>
               </div>
 
               {/* Intention */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <h4
                   className="text-lg text-[#1e3a5f]"
                   style={{ fontFamily: "Playfair Display, serif" }}
                 >
-                  Mass Intention
+                  Thanksgiving Intention
                 </h4>
                 <div className="p-4 bg-gray-50 rounded-lg">
-                  <p className="text-sm text-gray-700">
-                    {selectedBooking.intention}
+                  <p className="text-gray-700 leading-relaxed">
+                    {selectedThanksgiving.intention}
                   </p>
                 </div>
-              </div>
-
-              {/* Special Requests */}
-              <div className="space-y-2">
-                <h4
-                  className="text-lg text-[#1e3a5f]"
-                  style={{ fontFamily: "Playfair Display, serif" }}
-                >
-                  Special Requests
-                </h4>
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <p className="text-sm text-gray-700">
-                    {selectedBooking.specialRequests}
-                  </p>
-                </div>
-              </div>
-
-              {/* Submission Time */}
-              <div className="text-sm text-gray-500">
-                Submitted on: {selectedBooking.submittedAt}
               </div>
             </div>
           )}
@@ -626,17 +562,28 @@ export function AdminMassBooking() {
             >
               Close
             </Button>
-            {selectedBooking?.status === "pending" && (
+            <Button
+              onClick={() => handleDelete(selectedThanksgiving?._id)}
+              variant="outline"
+              disabled={actionLoading}
+              className="w-full sm:w-auto text-red-600 border-red-300 hover:bg-red-50"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete
+            </Button>
+            {selectedThanksgiving?.status === "pending" && (
               <>
                 <Button
-                  onClick={() => handleReject(selectedBooking.id)}
+                  onClick={() => handleReject(selectedThanksgiving._id)}
+                  disabled={actionLoading}
                   className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white"
                 >
                   <X className="w-4 h-4 mr-2" />
                   Reject
                 </Button>
                 <Button
-                  onClick={() => handleApprove(selectedBooking.id)}
+                  onClick={() => handleApprove(selectedThanksgiving._id)}
+                  disabled={actionLoading}
                   className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white"
                 >
                   <Check className="w-4 h-4 mr-2" />

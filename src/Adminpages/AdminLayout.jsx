@@ -55,6 +55,11 @@ export function AdminLayout() {
       icon: Calendar,
     },
     {
+      name: "Mass thanksgiving",
+      path: "/admin/mass-management",
+      icon: Calendar,
+    },
+    {
       name: "Priests",
       path: "/admin/priests",
       icon: Users,

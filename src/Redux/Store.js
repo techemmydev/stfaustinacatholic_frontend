@@ -12,6 +12,7 @@ import adminReducer from "./slice/adminSlice";
 import timeSlotReducer from "./slice/Timeslotslice";
 import eventReducer from "./slice/Eventslice";
 import massScheduleReducer from "./slice/Massscheduleslice";
+import massReducer from "./slice/Massslice";
 export const store = configureStore({
   reducer: {
     parishRegister: parishRegisterReducer,
@@ -26,5 +27,6 @@ export const store = configureStore({
     event: eventReducer,
     massSchedule: massScheduleReducer,
     timeSlot: timeSlotReducer,
+    mass: massReducer,
   },
 });
