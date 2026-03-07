@@ -13,6 +13,8 @@ import timeSlotReducer from "./slice/Timeslotslice";
 import eventReducer from "./slice/Eventslice";
 import massScheduleReducer from "./slice/Massscheduleslice";
 import massReducer from "./slice/Massslice";
+import sermonReducer from "./slice/Sermonslice";
+import priestReducer from "./slice/Priestslice";
 export const store = configureStore({
   reducer: {
     parishRegister: parishRegisterReducer,
@@ -28,5 +30,7 @@ export const store = configureStore({
     massSchedule: massScheduleReducer,
     timeSlot: timeSlotReducer,
     mass: massReducer,
+    sermon: sermonReducer,
+    priest: priestReducer,
   },
 });

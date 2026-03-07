@@ -1,77 +1,21 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { Play, Volume2, Download, Calendar, Search } from "lucide-react";
-
-const sermons = [
-  {
-    id: 1,
-    title: "The Light of Christ in Advent",
-    speaker: "Fr. Thomas O'Connor",
-    date: "December 1, 2025",
-    duration: "18:32",
-    type: "video",
-    thumbnail:
-      "https://images.unsplash.com/photo-1610022069496-955617dd718c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080",
-    description:
-      "Reflecting on the hope and anticipation of the Advent season as we prepare our hearts for Christmas.",
-    scripture: "Isaiah 9:2-7",
-  },
-  {
-    id: 2,
-    title: "Living the Beatitudes Today",
-    speaker: "Fr. Michael Rodriguez",
-    date: "November 24, 2025",
-    duration: "22:15",
-    type: "video",
-    thumbnail:
-      "https://images.unsplash.com/photo-1610022069496-955617dd718c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080",
-    description:
-      "Exploring how Jesus calls us to live the Beatitudes in our modern world.",
-    scripture: "Matthew 5:1-12",
-  },
-  {
-    id: 3,
-    title: "The Power of Forgiveness",
-    speaker: "Fr. Thomas O'Connor",
-    date: "November 17, 2025",
-    duration: "15:48",
-    type: "audio",
-    thumbnail:
-      "https://images.unsplash.com/photo-1749199213094-048ae472fa03?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080",
-    description:
-      "Understanding God's mercy and how we are called to forgive as we have been forgiven.",
-    scripture: "Matthew 18:21-35",
-  },
-  // ... add remaining sermons here
-];
-
-const photoGallery = [
-  {
-    id: 1,
-    title: "Christmas Mass 2024",
-    date: "December 25, 2024",
-    image:
-      "https://images.unsplash.com/photo-1749199213094-048ae472fa03?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080",
-  },
-  {
-    id: 2,
-    title: "First Communion Celebration",
-    date: "May 12, 2024",
-    image:
-      "https://images.unsplash.com/photo-1760319726429-fcda77d3cb05?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080",
-  },
-  {
-    id: 3,
-    title: "First Communion Celebration",
-    date: "May 12, 2024",
-    image:
-      "https://images.unsplash.com/photo-1760319726429-fcda77d3cb05?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080",
-  },
-  // ... add remaining photos here
-];
+import { fetchSermons, fetchPhotos } from "../Redux/slice/Sermonslice";
 
 export function SermonsPage() {
+  const dispatch = useDispatch();
+  const { sermons, photos, publicLoading } = useSelector(
+    (state) => state.sermon,
+  );
+
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
+
+  useEffect(() => {
+    dispatch(fetchSermons());
+    dispatch(fetchPhotos());
+  }, [dispatch]);
 
   const filteredSermons = sermons.filter((sermon) => {
     const matchesSearch =
@@ -81,6 +25,13 @@ export function SermonsPage() {
     const matchesType = filterType === "all" || sermon.type === filterType;
     return matchesSearch && matchesType;
   });
+
+  const formatDate = (dateStr) =>
+    new Date(dateStr).toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
 
   return (
     <div className="font-inter">
@@ -133,73 +84,136 @@ export function SermonsPage() {
       {/* Sermons Grid */}
       <section className="py-16 max-w-7xl mx-auto px-4">
         <h2 className="mb-8 text-[#1e3a5f]">Recent Sermons</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredSermons.map((sermon) => (
-            <div
-              key={sermon.id}
-              className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow"
-            >
-              <div className="relative group">
-                <img
-                  src={sermon.thumbnail}
-                  alt={sermon.title}
-                  className="w-full h-48 object-cover"
-                />
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  {sermon.type === "video" ? (
-                    <Play className="w-16 h-16 text-white" />
+
+        {publicLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div
+                key={i}
+                className="bg-white rounded-lg shadow-md overflow-hidden"
+              >
+                <div className="w-full h-48 bg-gray-200 animate-pulse" />
+                <div className="p-6 space-y-3">
+                  <div className="h-4 bg-gray-200 rounded animate-pulse w-1/3" />
+                  <div className="h-5 bg-gray-200 rounded animate-pulse w-2/3" />
+                  <div className="h-4 bg-gray-200 rounded animate-pulse w-1/4" />
+                  <div className="h-12 bg-gray-200 rounded animate-pulse" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredSermons.length === 0 ? (
+          <div className="text-center py-20 text-gray-400">
+            <Play className="w-16 h-16 mx-auto mb-4 opacity-30" />
+            <p className="text-lg">No sermons found</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredSermons.map((sermon) => (
+              <div
+                key={sermon._id}
+                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow"
+              >
+                <div className="relative group">
+                  {sermon.thumbnail ? (
+                    <img
+                      src={sermon.thumbnail}
+                      alt={sermon.title}
+                      className="w-full h-48 object-cover"
+                    />
                   ) : (
-                    <Volume2 className="w-16 h-16 text-white" />
+                    <div className="w-full h-48 bg-gradient-to-br from-[#1e3a5f] to-[#8B2635] flex items-center justify-center">
+                      {sermon.type === "video" ? (
+                        <Play className="w-16 h-16 text-white/40" />
+                      ) : (
+                        <Volume2 className="w-16 h-16 text-white/40" />
+                      )}
+                    </div>
                   )}
+                  {sermon.mediaUrl && (
+                    <a
+                      href={sermon.mediaUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      {sermon.type === "video" ? (
+                        <Play className="w-16 h-16 text-white" />
+                      ) : (
+                        <Volume2 className="w-16 h-16 text-white" />
+                      )}
+                    </a>
+                  )}
+                  <div className="absolute top-3 right-3 px-3 py-1 bg-[#8B2635] text-white text-sm rounded-full">
+                    {sermon.duration}
+                  </div>
+                  <div className="absolute top-3 left-3 px-3 py-1 bg-black/50 text-white text-xs rounded-full capitalize">
+                    {sermon.type}
+                  </div>
                 </div>
-                <div className="absolute top-3 right-3 px-3 py-1 bg-[#8B2635] text-white text-sm rounded-full">
-                  {sermon.duration}
+                <div className="p-6">
+                  <div className="flex items-center gap-2 mb-3 text-sm text-[#666666]">
+                    <Calendar className="w-4 h-4 text-[#d4af37]" />
+                    <span>{formatDate(sermon.date)}</span>
+                  </div>
+                  <h3 className="mb-2 text-[#1e3a5f]">{sermon.title}</h3>
+                  <p className="text-[#8B2635] text-sm mb-3">
+                    {sermon.speaker}
+                  </p>
+                  <p className="text-[#666666] mb-3 line-clamp-2">
+                    {sermon.description}
+                  </p>
+                  <div className="pt-3 border-t border-gray-200 flex items-center justify-between">
+                    <span className="text-sm text-[#666666]">
+                      {sermon.scripture}
+                    </span>
+                    {sermon.mediaUrl && (
+                      <a
+                        href={sermon.mediaUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#8B2635] hover:text-[#6d1d2a]"
+                        title="Open media"
+                      >
+                        <Download className="w-5 h-5" />
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
-              <div className="p-6">
-                <div className="flex items-center gap-2 mb-3 text-sm text-[#666666]">
-                  <Calendar className="w-4 h-4 text-[#d4af37]" />
-                  <span>{sermon.date}</span>
-                </div>
-                <h3 className="mb-2 text-[#1e3a5f]">{sermon.title}</h3>
-                <p className="text-[#8B2635] text-sm mb-3">{sermon.speaker}</p>
-                <p className="text-[#666666] mb-3">{sermon.description}</p>
-                <div className="pt-3 border-t border-gray-200 flex items-center justify-between">
-                  <span className="text-sm text-[#666666]">
-                    {sermon.scripture}
-                  </span>
-                  <button className="text-[#8B2635] hover:text-[#6d1d2a]">
-                    <Download className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Photo Gallery */}
       <section className="py-16 bg-[#f9f7f4]">
         <div className="max-w-7xl mx-auto px-4">
           <h2 className="mb-8 text-[#1e3a5f]">Photo Gallery</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {photoGallery.map((photo) => (
-              <div
-                key={photo.id}
-                className="group relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow"
-              >
-                <img
-                  src={photo.image}
-                  alt={photo.title}
-                  className="w-full h-64 object-cover transform group-hover:scale-110 transition-transform duration-300"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex flex-col justify-end p-4 text-white">
-                  <h4 className="text-white m-0">{photo.title}</h4>
-                  <p className="text-sm text-gray-200">{photo.date}</p>
+          {photos.length === 0 && !publicLoading ? (
+            <p className="text-center text-gray-400 py-12">No photos yet.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              {photos.map((photo) => (
+                <div
+                  key={photo._id}
+                  className="group relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow"
+                >
+                  <img
+                    src={photo.image}
+                    alt={photo.title}
+                    className="w-full h-64 object-cover transform group-hover:scale-110 transition-transform duration-300"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex flex-col justify-end p-4 text-white">
+                    <h4 className="text-white m-0">{photo.title}</h4>
+                    <p className="text-sm text-gray-200">
+                      {formatDate(photo.date)}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

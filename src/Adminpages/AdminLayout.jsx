@@ -55,6 +55,11 @@ export function AdminLayout() {
       icon: Mail,
     },
     {
+      name: "Sermons ",
+      path: "/admin/sermons",
+      icon: MessageSquare,
+    },
+    {
       name: "Time Slots",
       path: "/admin/time-slots",
       icon: Calendar,
@@ -77,7 +82,7 @@ export function AdminLayout() {
     {
       name: "Mass Bookings",
       path: "/admin/mass-bookings",
-      icon: Church,
+      icon: Calendar,
     },
     {
       name: "Events",
