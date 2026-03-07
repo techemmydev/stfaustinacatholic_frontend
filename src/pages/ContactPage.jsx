@@ -19,26 +19,20 @@ export function ContactPage() {
     message: "",
   });
 
-  // Show toast on error
   useEffect(() => {
-    if (error) {
-      toast.error(error);
-    }
+    if (error) toast.error(error);
   }, [error]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => dispatch(resetContactState());
   }, [dispatch]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
     if (!formData.name || !formData.email || !formData.message) {
       toast.error("Please fill in all required fields");
       return;
     }
-
     dispatch(submitContactForm(formData));
   };
 
@@ -49,13 +43,7 @@ export function ContactPage() {
 
   const handleReset = () => {
     dispatch(resetContactState());
-    setFormData({
-      name: "",
-      email: "",
-      phone: "",
-      subject: "",
-      message: "",
-    });
+    setFormData({ name: "", email: "", phone: "", subject: "", message: "" });
   };
 
   if (success) {

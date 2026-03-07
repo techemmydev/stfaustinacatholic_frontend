@@ -50,6 +50,11 @@ export function AdminLayout() {
       icon: Calendar,
     },
     {
+      name: "contacts ",
+      path: "/admin/contacts",
+      icon: Mail,
+    },
+    {
       name: "Time Slots",
       path: "/admin/time-slots",
       icon: Calendar,

@@ -10,6 +10,7 @@ import {
   Calendar,
   Clock,
   Users,
+  AlertTriangle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,10 @@ export function AdminMassManagement() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedMass, setSelectedMass] = useState(null);
+
+  // Delete confirmation state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [massToDelete, setMassToDelete] = useState(null);
 
   const [newMass, setNewMass] = useState({
     name: "",
@@ -129,18 +134,24 @@ export function AdminMassManagement() {
     }
   };
 
-  const handleDeleteMass = async (id) => {
-    if (
-      window.confirm("Are you sure you want to delete this mass permanently?")
-    ) {
-      const result = await dispatch(deleteMass(id));
+  // Opens the confirmation dialog instead of window.confirm
+  const confirmDelete = (mass) => {
+    setMassToDelete(mass);
+    setDeleteDialogOpen(true);
+  };
 
-      if (result.error) {
-        toast.error(result.payload || "Failed to delete mass");
-      } else {
-        toast.success("Mass deleted successfully");
-      }
+  // Called when user confirms deletion
+  const handleDeleteMass = async () => {
+    if (!massToDelete) return;
+    const result = await dispatch(deleteMass(massToDelete._id));
+
+    if (result.error) {
+      toast.error(result.payload || "Failed to delete mass");
+    } else {
+      toast.success("Mass deleted successfully");
     }
+    setDeleteDialogOpen(false);
+    setMassToDelete(null);
   };
 
   const dayOrder = {
@@ -420,7 +431,7 @@ export function AdminMassManagement() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleDeleteMass(mass._id)}
+                            onClick={() => confirmDelete(mass)}
                             disabled={actionLoading}
                             className="text-red-600 border-red-300 hover:bg-red-50"
                             title="Delete"
@@ -645,6 +656,45 @@ export function AdminMassManagement() {
               className="bg-[#8B2635] hover:bg-[#6d1d28] text-white"
             >
               {actionLoading ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Delete Confirmation Dialog ── */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+              </div>
+              <DialogTitle className="text-xl text-gray-900">
+                Delete Mass
+              </DialogTitle>
+            </div>
+            <DialogDescription className="text-gray-600">
+              Are you sure you want to permanently delete{" "}
+              <span className="font-semibold text-gray-900">
+                {massToDelete?.name}
+              </span>
+              ? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={actionLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDeleteMass}
+              disabled={actionLoading}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {actionLoading ? "Deleting..." : "Yes, Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>

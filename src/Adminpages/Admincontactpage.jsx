@@ -3,28 +3,20 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   Search,
   Eye,
-  Check,
-  X,
-  Calendar,
-  Clock,
-  User,
+  Trash2,
   Mail,
   Phone,
-  MapPin,
-  Trash2,
+  User,
+  Clock,
+  CheckCheck,
+  MessageSquare,
   AlertTriangle,
+  BookOpen,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -36,149 +28,130 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import {
-  fetchAllAppointmentsAdmin,
-  approveAppointment,
-  rejectAppointment,
-  deleteAppointment,
-} from "../Redux/slice/BookingAppointSlice";
+  fetchAllContactsAdmin,
+  markContactAsRead,
+  markContactAsResponded,
+  deleteContact,
+} from "../Redux/slice/contactsSlice";
 
-const appointmentTypeLabels = {
-  mass: "Mass Attendance",
-  baptism: "Baptism Preparation",
-  "first-communion": "First Communion Preparation",
-  confirmation: "Confirmation Preparation",
-  confession: "Confession/Reconciliation",
-  wedding: "Wedding Planning",
-  general: "General Consultation",
-};
-
-export function AdminAppointmentsPage() {
+export function AdminContactPage() {
   const dispatch = useDispatch();
-  const { adminAppointments, loading, actionLoading } = useSelector(
-    (state) => state.appointment,
+  const { adminContacts, adminLoading, actionLoading } = useSelector(
+    (state) => state.contact,
   );
 
-  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [selectedContact, setSelectedContact] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [appointmentToDelete, setAppointmentToDelete] = useState(null);
+  const [contactToDelete, setContactToDelete] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterType, setFilterType] = useState("all");
   const [activeTab, setActiveTab] = useState("all");
 
   useEffect(() => {
-    dispatch(fetchAllAppointmentsAdmin());
+    dispatch(fetchAllContactsAdmin());
   }, [dispatch]);
 
-  const handleViewDetails = (appointment) => {
-    setSelectedAppointment(appointment);
+  // Auto-mark as read when opening details
+  const handleViewDetails = async (contact) => {
+    setSelectedContact(contact);
     setDialogOpen(true);
-  };
-
-  const handleApprove = async (id) => {
-    const result = await dispatch(approveAppointment(id));
-    if (result.error) {
-      toast.error("Failed to approve appointment");
-    } else {
-      toast.success("Appointment approved successfully");
-      setDialogOpen(false);
-      dispatch(fetchAllAppointmentsAdmin());
+    if (contact.status === "unread") {
+      await dispatch(markContactAsRead(contact._id));
     }
   };
 
-  const handleReject = async (id) => {
-    const result = await dispatch(rejectAppointment(id));
+  const handleMarkResponded = async (id) => {
+    const result = await dispatch(markContactAsResponded(id));
     if (result.error) {
-      toast.error("Failed to reject appointment");
+      toast.error(result.payload || "Failed to update status");
     } else {
-      toast.error("Appointment rejected");
-      setDialogOpen(false);
-      dispatch(fetchAllAppointmentsAdmin());
+      toast.success("Marked as responded");
+      // update selectedContact if dialog is open
+      setSelectedContact((prev) =>
+        prev?._id === id ? { ...prev, status: "responded" } : prev,
+      );
     }
   };
 
-  const confirmDelete = (appointment) => {
-    setAppointmentToDelete(appointment);
+  const confirmDelete = (contact) => {
+    setContactToDelete(contact);
     setDeleteDialogOpen(true);
     setDialogOpen(false);
   };
 
   const handleDelete = async () => {
-    const result = await dispatch(deleteAppointment(appointmentToDelete._id));
+    const result = await dispatch(deleteContact(contactToDelete._id));
     if (result.error) {
-      toast.error("Failed to delete appointment");
+      toast.error(result.payload || "Failed to delete message");
     } else {
-      toast.success("Appointment deleted successfully");
+      toast.success("Message deleted successfully");
     }
     setDeleteDialogOpen(false);
-    setAppointmentToDelete(null);
+    setContactToDelete(null);
   };
 
   const getStatusBadge = (status) => {
-    const map = {
-      pending: "bg-orange-100 text-orange-700 hover:bg-orange-100",
-      approved: "bg-green-100 text-green-700 hover:bg-green-100",
-      rejected: "bg-red-100 text-red-700 hover:bg-red-100",
-    };
-    return (
-      <Badge className={map[status] || "bg-gray-100 text-gray-700"}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </Badge>
-    );
+    switch (status) {
+      case "unread":
+        return (
+          <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100">
+            Unread
+          </Badge>
+        );
+      case "read":
+        return (
+          <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
+            Read
+          </Badge>
+        );
+      case "responded":
+        return (
+          <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+            Responded
+          </Badge>
+        );
+      default:
+        return <Badge>{status}</Badge>;
+    }
   };
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return "—";
-    return new Date(dateStr).toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
+  const contacts = adminContacts || [];
 
-  const appointments = adminAppointments || [];
-
-  const filteredAppointments = appointments.filter((apt) => {
-    const label =
-      appointmentTypeLabels[apt.appointmentType] || apt.appointmentType;
+  const filteredContacts = contacts.filter((c) => {
     const matchesSearch =
-      apt.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      apt.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      label?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType =
-      filterType === "all" || apt.appointmentType === filterType;
-    const matchesTab = activeTab === "all" || apt.status === activeTab;
-    return matchesSearch && matchesType && matchesTab;
+      c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.subject?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.message?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesTab = activeTab === "all" || c.status === activeTab;
+    return matchesSearch && matchesTab;
   });
 
   const counts = {
-    all: appointments.length,
-    pending: appointments.filter((a) => a.status === "pending").length,
-    approved: appointments.filter((a) => a.status === "approved").length,
-    rejected: appointments.filter((a) => a.status === "rejected").length,
+    all: contacts.length,
+    unread: contacts.filter((c) => c.status === "unread").length,
+    read: contacts.filter((c) => c.status === "read").length,
+    responded: contacts.filter((c) => c.status === "responded").length,
   };
 
   // ── Improved loading state ───────────────────────────────────
-  if (loading) {
+  if (adminLoading) {
     return (
       <div className="space-y-6">
-        {/* Header */}
         <div>
           <h2
             className="text-2xl text-[#1e3a5f]"
             style={{ fontFamily: "Playfair Display, serif" }}
           >
-            Appointment Management
+            Contact Messages
           </h2>
           <p className="text-gray-600 mt-1">
-            Review, approve, and manage parishioner appointment requests
+            View and manage messages sent by parishioners
           </p>
         </div>
 
-        {/* Stat card skeletons */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {["Total", "Pending", "Approved", "Rejected"].map((label) => (
+          {["Total", "Unread", "Read", "Responded"].map((label) => (
             <Card key={label} className="border-0 shadow-md">
               <CardContent className="p-5">
                 <p className="text-sm text-gray-400 mb-2">{label}</p>
@@ -188,7 +161,6 @@ export function AdminAppointmentsPage() {
           ))}
         </div>
 
-        {/* Main spinner card */}
         <Card className="border-0 shadow-md">
           <CardContent className="py-20 flex flex-col items-center justify-center gap-4">
             <div className="relative">
@@ -200,7 +172,7 @@ export function AdminAppointmentsPage() {
                 className="text-lg text-[#1e3a5f]"
                 style={{ fontFamily: "Playfair Display, serif" }}
               >
-                Loading Appointments
+                Loading Messages
               </p>
               <p className="text-sm text-gray-400 mt-1">
                 Please wait while we fetch the records…
@@ -220,65 +192,79 @@ export function AdminAppointmentsPage() {
           className="text-2xl text-[#1e3a5f]"
           style={{ fontFamily: "Playfair Display, serif" }}
         >
-          Appointment Management
+          Contact Messages
         </h2>
         <p className="text-gray-600 mt-1">
-          Review, approve, and manage parishioner appointment requests
+          View and manage messages sent by parishioners
         </p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: "Total", value: counts.all, color: "text-blue-600" },
-          { label: "Pending", value: counts.pending, color: "text-orange-600" },
           {
-            label: "Approved",
-            value: counts.approved,
-            color: "text-green-600",
+            label: "Total",
+            value: counts.all,
+            color: "text-blue-600",
+            bg: "bg-blue-50",
+            Icon: MessageSquare,
           },
-          { label: "Rejected", value: counts.rejected, color: "text-red-600" },
-        ].map(({ label, value, color }) => (
+          {
+            label: "Unread",
+            value: counts.unread,
+            color: "text-orange-600",
+            bg: "bg-orange-50",
+            Icon: Mail,
+          },
+          {
+            label: "Read",
+            value: counts.read,
+            color: "text-blue-600",
+            bg: "bg-blue-50",
+            Icon: BookOpen,
+          },
+          {
+            label: "Responded",
+            value: counts.responded,
+            color: "text-green-600",
+            bg: "bg-green-50",
+            Icon: CheckCheck,
+          },
+        ].map(({ label, value, color, bg, Icon }) => (
           <Card key={label} className="border-0 shadow-md">
             <CardContent className="p-5">
-              <p className="text-sm text-gray-500 mb-1">{label}</p>
-              <p
-                className={`text-3xl font-bold ${color}`}
-                style={{ fontFamily: "Playfair Display, serif" }}
-              >
-                {value}
-              </p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">{label}</p>
+                  <p
+                    className={`text-3xl font-bold ${color}`}
+                    style={{ fontFamily: "Playfair Display, serif" }}
+                  >
+                    {value}
+                  </p>
+                </div>
+                <div
+                  className={`w-10 h-10 ${bg} rounded-lg flex items-center justify-center`}
+                >
+                  <Icon className={`w-5 h-5 ${color}`} />
+                </div>
+              </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {/* Search & Filter */}
+      {/* Search */}
       <Card className="border-0 shadow-md">
         <CardContent className="p-5">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <Input
-                placeholder="Search by name, email, or service type..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-10"
-              />
-            </div>
-            <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="w-full md:w-52 h-10">
-                <SelectValue placeholder="Filter by type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                {Object.entries(appointmentTypeLabels).map(([val, label]) => (
-                  <SelectItem key={val} value={val}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              placeholder="Search by name, email, subject, or message..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 h-10"
+            />
           </div>
         </CardContent>
       </Card>
@@ -298,22 +284,22 @@ export function AdminAppointmentsPage() {
                 "data-[state=active]:bg-[#8B2635] data-[state=active]:text-white",
             },
             {
-              value: "pending",
-              label: `Pending (${counts.pending})`,
+              value: "unread",
+              label: `Unread (${counts.unread})`,
               activeClass:
                 "data-[state=active]:bg-orange-500 data-[state=active]:text-white",
             },
             {
-              value: "approved",
-              label: `Approved (${counts.approved})`,
+              value: "read",
+              label: `Read (${counts.read})`,
               activeClass:
-                "data-[state=active]:bg-green-600 data-[state=active]:text-white",
+                "data-[state=active]:bg-blue-600 data-[state=active]:text-white",
             },
             {
-              value: "rejected",
-              label: `Rejected (${counts.rejected})`,
+              value: "responded",
+              label: `Responded (${counts.responded})`,
               activeClass:
-                "data-[state=active]:bg-red-600 data-[state=active]:text-white",
+                "data-[state=active]:bg-green-600 data-[state=active]:text-white",
             },
           ].map(({ value, label, activeClass }) => (
             <TabsTrigger key={value} value={value} className={activeClass}>
@@ -323,15 +309,15 @@ export function AdminAppointmentsPage() {
         </TabsList>
 
         <TabsContent value={activeTab}>
-          {filteredAppointments.length === 0 ? (
+          {filteredContacts.length === 0 ? (
             <Card className="border-0 shadow-md">
               <CardContent className="p-12 text-center">
-                <Calendar className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                <Mail className="w-16 h-16 mx-auto text-gray-300 mb-4" />
                 <h3
                   className="text-xl text-gray-600 mb-2"
                   style={{ fontFamily: "Playfair Display, serif" }}
                 >
-                  No appointments found
+                  No messages found
                 </h3>
                 <p className="text-gray-500">
                   Try adjusting your search or filters
@@ -346,10 +332,11 @@ export function AdminAppointmentsPage() {
                     <thead className="bg-gray-50 border-b">
                       <tr>
                         {[
-                          "Parishioner",
-                          "Service Type",
-                          "Date & Time",
+                          "Sender",
+                          "Subject",
+                          "Message Preview",
                           "Status",
+                          "Date",
                           "Actions",
                         ].map((h) => (
                           <th
@@ -362,79 +349,84 @@ export function AdminAppointmentsPage() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {filteredAppointments.map((apt) => (
+                      {filteredContacts.map((contact) => (
                         <tr
-                          key={apt._id}
-                          className="hover:bg-gray-50 transition-colors"
+                          key={contact._id}
+                          className={`hover:bg-gray-50 transition-colors ${
+                            contact.status === "unread" ? "bg-orange-50/30" : ""
+                          }`}
                         >
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
                               <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#8B2635] to-[#d4af37] flex items-center justify-center flex-shrink-0">
                                 <span className="text-white text-sm font-semibold">
-                                  {apt.name?.charAt(0)}
+                                  {contact.name?.charAt(0)}
                                 </span>
                               </div>
                               <div>
-                                <div className="text-sm font-medium text-gray-900">
-                                  {apt.name}
+                                <div
+                                  className={`text-sm text-gray-900 ${contact.status === "unread" ? "font-semibold" : "font-medium"}`}
+                                >
+                                  {contact.name}
                                 </div>
                                 <div className="text-xs text-gray-500">
-                                  {apt.email}
+                                  {contact.email}
                                 </div>
                               </div>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {appointmentTypeLabels[apt.appointmentType] ||
-                              apt.appointmentType}
+                            {contact.subject || (
+                              <span className="text-gray-400 italic">
+                                No subject
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 max-w-xs">
+                            <p className="text-sm text-gray-700 line-clamp-1">
+                              {contact.message}
+                            </p>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">
-                              {formatDate(apt.date)}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {apt.time}
-                            </div>
+                            {getStatusBadge(contact.status)}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {getStatusBadge(apt.status)}
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {new Date(contact.createdAt).toLocaleDateString(
+                              "en-US",
+                              {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              },
+                            )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center gap-2">
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => handleViewDetails(apt)}
+                                onClick={() => handleViewDetails(contact)}
                                 title="View details"
                               >
                                 <Eye className="w-4 h-4" />
                               </Button>
-                              {apt.status === "pending" && (
-                                <>
-                                  <Button
-                                    size="sm"
-                                    onClick={() => handleApprove(apt._id)}
-                                    disabled={actionLoading}
-                                    className="bg-green-600 hover:bg-green-700 text-white"
-                                    title="Approve"
-                                  >
-                                    <Check className="w-4 h-4" />
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    onClick={() => handleReject(apt._id)}
-                                    disabled={actionLoading}
-                                    className="bg-orange-500 hover:bg-orange-600 text-white"
-                                    title="Reject"
-                                  >
-                                    <X className="w-4 h-4" />
-                                  </Button>
-                                </>
+                              {contact.status !== "responded" && (
+                                <Button
+                                  size="sm"
+                                  onClick={() =>
+                                    handleMarkResponded(contact._id)
+                                  }
+                                  disabled={actionLoading}
+                                  className="bg-green-600 hover:bg-green-700 text-white"
+                                  title="Mark as responded"
+                                >
+                                  <CheckCheck className="w-4 h-4" />
+                                </Button>
                               )}
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => confirmDelete(apt)}
+                                onClick={() => confirmDelete(contact)}
                                 disabled={actionLoading}
                                 className="text-red-600 border-red-300 hover:bg-red-50"
                                 title="Delete"
@@ -462,88 +454,50 @@ export function AdminAppointmentsPage() {
               className="text-2xl text-[#1e3a5f]"
               style={{ fontFamily: "Playfair Display, serif" }}
             >
-              Appointment Details
+              Message Details
             </DialogTitle>
-            <DialogDescription>
-              Review and manage this appointment request
-            </DialogDescription>
+            <DialogDescription>Full message from parishioner</DialogDescription>
           </DialogHeader>
 
-          {selectedAppointment && (
+          {selectedContact && (
             <div className="space-y-6">
               {/* Status */}
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <span className="text-sm text-gray-600">Current Status</span>
-                {getStatusBadge(selectedAppointment.status)}
+                {getStatusBadge(selectedContact.status)}
               </div>
 
-              {/* Personal Info */}
+              {/* Sender Info */}
               <div className="space-y-3">
                 <h4
                   className="text-base font-semibold text-[#1e3a5f]"
                   style={{ fontFamily: "Playfair Display, serif" }}
                 >
-                  Personal Information
+                  Sender Information
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {[
                     {
                       icon: User,
                       label: "Full Name",
-                      value: selectedAppointment.name,
+                      value: selectedContact.name,
                     },
                     {
                       icon: Mail,
                       label: "Email Address",
-                      value: selectedAppointment.email,
+                      value: selectedContact.email,
                     },
                     {
                       icon: Phone,
                       label: "Phone Number",
-                      value: selectedAppointment.phone,
-                    },
-                  ].map(({ icon: Icon, label, value }) => (
-                    <div
-                      key={label}
-                      className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg"
-                    >
-                      <Icon className="w-4 h-4 text-[#8B2635] mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="text-xs text-gray-500 mb-0.5">{label}</p>
-                        <p className="text-sm text-gray-900">{value}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Appointment Info */}
-              <div className="space-y-3">
-                <h4
-                  className="text-base font-semibold text-[#1e3a5f]"
-                  style={{ fontFamily: "Playfair Display, serif" }}
-                >
-                  Appointment Information
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {[
-                    {
-                      icon: Calendar,
-                      label: "Service Type",
-                      value:
-                        appointmentTypeLabels[
-                          selectedAppointment.appointmentType
-                        ] || selectedAppointment.appointmentType,
-                    },
-                    {
-                      icon: Calendar,
-                      label: "Appointment Date",
-                      value: formatDate(selectedAppointment.date),
+                      value: selectedContact.phone || "—",
                     },
                     {
                       icon: Clock,
-                      label: "Time",
-                      value: selectedAppointment.time,
+                      label: "Received On",
+                      value: new Date(selectedContact.createdAt).toLocaleString(
+                        "en-US",
+                      ),
                     },
                   ].map(({ icon: Icon, label, value }) => (
                     <div
@@ -560,31 +514,37 @@ export function AdminAppointmentsPage() {
                 </div>
               </div>
 
-              {/* Notes */}
-              {selectedAppointment.notes && (
+              {/* Subject */}
+              {selectedContact.subject && (
                 <div className="space-y-2">
                   <h4
                     className="text-base font-semibold text-[#1e3a5f]"
                     style={{ fontFamily: "Playfair Display, serif" }}
                   >
-                    Additional Notes
+                    Subject
                   </h4>
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <p className="text-sm text-gray-700">
-                      {selectedAppointment.notes}
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-900">
+                      {selectedContact.subject}
                     </p>
                   </div>
                 </div>
               )}
 
-              <p className="text-xs text-gray-400">
-                Submitted:{" "}
-                {selectedAppointment.createdAt
-                  ? new Date(selectedAppointment.createdAt).toLocaleString(
-                      "en-US",
-                    )
-                  : "—"}
-              </p>
+              {/* Message */}
+              <div className="space-y-2">
+                <h4
+                  className="text-base font-semibold text-[#1e3a5f]"
+                  style={{ fontFamily: "Playfair Display, serif" }}
+                >
+                  Message
+                </h4>
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                    {selectedContact.message}
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 
@@ -592,37 +552,29 @@ export function AdminAppointmentsPage() {
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
               Close
             </Button>
-            {selectedAppointment?.status === "pending" && (
-              <>
-                <Button
-                  onClick={() => handleReject(selectedAppointment._id)}
-                  disabled={actionLoading}
-                  className="bg-orange-500 hover:bg-orange-600 text-white"
-                >
-                  <X className="w-4 h-4 mr-2" /> Reject
-                </Button>
-                <Button
-                  onClick={() => handleApprove(selectedAppointment._id)}
-                  disabled={actionLoading}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  <Check className="w-4 h-4 mr-2" /> Approve
-                </Button>
-              </>
-            )}
             <Button
               variant="outline"
-              onClick={() => confirmDelete(selectedAppointment)}
+              onClick={() => confirmDelete(selectedContact)}
               disabled={actionLoading}
               className="text-red-600 border-red-300 hover:bg-red-50"
             >
               <Trash2 className="w-4 h-4 mr-2" /> Delete
             </Button>
+            {selectedContact?.status !== "responded" && (
+              <Button
+                onClick={() => handleMarkResponded(selectedContact._id)}
+                disabled={actionLoading}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                <CheckCheck className="w-4 h-4 mr-2" />
+                Mark as Responded
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* ── Delete Confirmation Modal ── */}
+      {/* ── Delete Confirmation Dialog ── */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -631,13 +583,13 @@ export function AdminAppointmentsPage() {
                 <AlertTriangle className="w-5 h-5 text-red-600" />
               </div>
               <DialogTitle className="text-xl text-gray-900">
-                Delete Appointment
+                Delete Message
               </DialogTitle>
             </div>
             <DialogDescription className="text-gray-600 leading-relaxed">
-              Are you sure you want to permanently delete the appointment for{" "}
+              Are you sure you want to permanently delete the message from{" "}
               <span className="font-semibold text-gray-900">
-                {appointmentToDelete?.name}
+                {contactToDelete?.name}
               </span>
               ? This action cannot be undone.
             </DialogDescription>

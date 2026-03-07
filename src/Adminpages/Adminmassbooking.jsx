@@ -10,6 +10,7 @@ import {
   Eye,
   Trash2,
   Clock,
+  AlertTriangle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +44,10 @@ export function AdminMassBooking() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
 
+  // Delete confirmation state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [thanksgivingToDelete, setThanksgivingToDelete] = useState(null);
+
   // Fetch thanksgivings on mount
   useEffect(() => {
     dispatch(fetchAllThanksgivingsAdmin());
@@ -75,20 +80,25 @@ export function AdminMassBooking() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (
-      window.confirm(
-        "Are you sure you want to delete this thanksgiving permanently?",
-      )
-    ) {
-      const result = await dispatch(deleteThanksgiving(id));
-      if (result.error) {
-        toast.error(result.payload || "Failed to delete thanksgiving");
-      } else {
-        toast.success("Thanksgiving deleted successfully");
-        setDialogOpen(false);
-      }
+  // Opens the confirmation dialog instead of window.confirm
+  const confirmDelete = (thanksgiving) => {
+    setThanksgivingToDelete(thanksgiving);
+    setDeleteDialogOpen(true);
+    // Close the details dialog if it was open
+    setDialogOpen(false);
+  };
+
+  // Called when user confirms deletion
+  const handleDelete = async () => {
+    if (!thanksgivingToDelete) return;
+    const result = await dispatch(deleteThanksgiving(thanksgivingToDelete._id));
+    if (result.error) {
+      toast.error(result.payload || "Failed to delete thanksgiving");
+    } else {
+      toast.success("Thanksgiving deleted successfully");
     }
+    setDeleteDialogOpen(false);
+    setThanksgivingToDelete(null);
   };
 
   const getStatusBadge = (status) => {
@@ -437,7 +447,7 @@ export function AdminMassBooking() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => handleDelete(thanksgiving._id)}
+                                onClick={() => confirmDelete(thanksgiving)}
                                 disabled={actionLoading}
                                 className="hover:bg-red-50 hover:text-red-700"
                                 title="Delete"
@@ -563,7 +573,7 @@ export function AdminMassBooking() {
               Close
             </Button>
             <Button
-              onClick={() => handleDelete(selectedThanksgiving?._id)}
+              onClick={() => confirmDelete(selectedThanksgiving)}
               variant="outline"
               disabled={actionLoading}
               className="w-full sm:w-auto text-red-600 border-red-300 hover:bg-red-50"
@@ -591,6 +601,45 @@ export function AdminMassBooking() {
                 </Button>
               </>
             )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Delete Confirmation Dialog ── */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+              </div>
+              <DialogTitle className="text-xl text-gray-900">
+                Delete Thanksgiving
+              </DialogTitle>
+            </div>
+            <DialogDescription className="text-gray-600">
+              Are you sure you want to permanently delete the booking for{" "}
+              <span className="font-semibold text-gray-900">
+                {thanksgivingToDelete?.name}
+              </span>
+              ? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={actionLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDelete}
+              disabled={actionLoading}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {actionLoading ? "Deleting..." : "Yes, Delete"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
