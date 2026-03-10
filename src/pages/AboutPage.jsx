@@ -6,7 +6,7 @@ import CommunityStories from "@/UiComponents/CommunityStories";
 import InvitationModal from "@/UiComponents/InvitationModal";
 import { useDispatch, useSelector } from "react-redux";
 import { Badge } from "@/components/ui/badge";
-import { fetchPriests } from "../Redux/slice/priestSlice";
+import { fetchPriests } from "../Redux/slice/Priestslice";
 import FaqSection from "@/UiComponents/Faq";
 
 // ── helpers ──────────────────────────────────────────────
