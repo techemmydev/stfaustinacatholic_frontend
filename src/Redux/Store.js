@@ -15,6 +15,7 @@ import massScheduleReducer from "./slice/Massscheduleslice";
 import massReducer from "./slice/Massslice";
 import sermonReducer from "./slice/Sermonslice";
 import priestReducer from "./slice/Priestslice";
+import adminSettingsReducer from "./slice/Adminsettingsslice";
 export const store = configureStore({
   reducer: {
     parishRegister: parishRegisterReducer,
@@ -32,5 +33,6 @@ export const store = configureStore({
     mass: massReducer,
     sermon: sermonReducer,
     priest: priestReducer,
+    adminSettings: adminSettingsReducer,
   },
 });
