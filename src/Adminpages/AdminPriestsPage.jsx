@@ -34,7 +34,7 @@ import {
   updatePriest,
   togglePriestActive,
   deletePriest,
-} from "../Redux/slice/priestSlice";
+} from "../Redux/slice/Priestslice";
 
 // ── helpers ──────────────────────────────────────────────
 const SPECIALIZATION_OPTIONS = [
