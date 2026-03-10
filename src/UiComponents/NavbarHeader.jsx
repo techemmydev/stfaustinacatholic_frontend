@@ -1,28 +1,16 @@
-import React from "react";
-import logo from "../assets/images/stfaustinaimage.png";
+import React, { useState, useRef, useEffect } from "react";
+import logo from "../assets/images/sspeterandpaullogo.jpg";
 import {
   Disclosure,
   DisclosureButton,
   DisclosurePanel,
-  Menu,
-  MenuButton,
-  MenuItem,
-  MenuItems,
 } from "@headlessui/react";
 import {
   Bars3Icon,
-  // BellIcon,
   XMarkIcon,
   ChevronDownIcon,
 } from "@heroicons/react/24/outline";
 import { Link, useLocation } from "react-router";
-
-/* ------------------ USER (optional) ------------------ */
-// const user = {
-//   name: "Tom Cook",
-//   email: "tom@example.com",
-//   imageUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e",
-// };
 
 /* ------------------ NAV LINKS ------------------ */
 const navLinks = [
@@ -46,12 +34,6 @@ const navLinks = [
   { label: "Donate", path: "/donate" },
 ];
 
-const userNavigation = [
-  { name: "Your profile", href: "#" },
-  { name: "Settings", href: "#" },
-  { name: "Sign out", href: "#" },
-];
-
 /* ------------------ HELPERS ------------------ */
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -59,7 +41,6 @@ function classNames(...classes) {
 
 function useNavigation() {
   const location = useLocation();
-
   return navLinks.map((item) => ({
     ...item,
     current:
@@ -69,7 +50,61 @@ function useNavigation() {
   }));
 }
 
-/* ------------------ COMPONENT ------------------ */
+/* ------------------ DROPDOWN COMPONENT ------------------ */
+function DropdownMenu({ item }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  // Close when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (ref.current && !ref.current.contains(e.target)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((prev) => !prev)}
+        className={classNames(
+          item.current
+            ? "bg-gray-900 text-white"
+            : "text-gray-300 hover:bg-white/5 hover:text-white",
+          "inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium",
+        )}
+      >
+        {item.label}
+        <ChevronDownIcon
+          className={classNames(
+            open ? "rotate-180" : "",
+            "size-4 transition-transform duration-200",
+          )}
+        />
+      </button>
+
+      {open && (
+        <div className="absolute top-full left-0 mt-2 w-48 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 z-50">
+          {item.children.map((child) => (
+            <Link
+              key={child.path}
+              to={child.path}
+              onClick={() => setOpen(false)}
+              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 first:rounded-t-md last:rounded-b-md"
+            >
+              {child.label}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ------------------ MAIN COMPONENT ------------------ */
 export default function NavbarHeader() {
   const navigation = useNavigation();
 
@@ -88,13 +123,13 @@ export default function NavbarHeader() {
                   <Link to="/" className="flex items-center gap-3">
                     <img
                       src={logo}
-                      alt="St. Faustina Parish Catholic Church"
-                      className="h-15 w-auto"
+                      alt="Ss. Peter and Paul Catholic Church"
+                      className="h-15 w-auto rounded-full border-2 border-gray-800"
                     />
                     <span className="hidden sm:block text-white font-semibold text-sm leading-tight">
-                      St. Faustina Parish
+                      Ss. Peter and Paul
                       <br />
-                      Catholic Church
+                      Catholic Church, Shomolu
                     </span>
                   </Link>
 
@@ -115,38 +150,7 @@ export default function NavbarHeader() {
                         }
 
                         if (item.children) {
-                          return (
-                            <Menu
-                              key={item.label}
-                              as="div"
-                              className="relative"
-                            >
-                              <MenuButton
-                                className={classNames(
-                                  item.current
-                                    ? "bg-gray-900 text-white"
-                                    : "text-gray-300 hover:bg-white/5 hover:text-white",
-                                  "inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium",
-                                )}
-                              >
-                                {item.label}
-                                <ChevronDownIcon className="size-4" />
-                              </MenuButton>
-
-                              <MenuItems className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                                {item.children.map((child) => (
-                                  <MenuItem key={child.path}>
-                                    <Link
-                                      to={child.path}
-                                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                    >
-                                      {child.label}
-                                    </Link>
-                                  </MenuItem>
-                                ))}
-                              </MenuItems>
-                            </Menu>
-                          );
+                          return <DropdownMenu key={item.label} item={item} />;
                         }
 
                         return (
@@ -170,50 +174,18 @@ export default function NavbarHeader() {
 
                 {/* ---------------- RIGHT SIDE ---------------- */}
                 <div className="hidden md:flex items-center gap-4">
-                  {/* Login */}
                   <Link
                     to="/admin/login"
                     className="text-sm font-medium text-gray-300 hover:text-white transition"
                   >
                     Admin login
                   </Link>
-
-                  {/* Sign Up */}
                   <Link
                     to="/register"
                     className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-100 transition"
                   >
                     Membership
                   </Link>
-
-                  {/* Notification */}
-                  {/* <button className="rounded-full p-1 text-gray-400 hover:text-white">
-                <BellIcon className="size-6" />
-              </button> */}
-
-                  {/* Profile Menu */}
-                  {/* <Menu as="div" className="relative">
-                <MenuButton className="flex items-center rounded-full">
-                  <img
-                    src={user.imageUrl}
-                    alt="User profile"
-                    className="size-8 rounded-full"
-                  />
-                </MenuButton>
-
-                <MenuItems className="absolute right-0 z-10 mt-2 w-48 rounded-md bg-white py-1 shadow-lg">
-                  {userNavigation.map((item) => (
-                    <MenuItem key={item.name}>
-                      <a
-                        href={item.href}
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        {item.name}
-                      </a>
-                    </MenuItem>
-                  ))}
-                </MenuItems>
-              </Menu> */}
                 </div>
 
                 {/* ---------------- MOBILE BUTTON ---------------- */}
