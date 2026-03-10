@@ -43,7 +43,7 @@ import {
   updatePhoto,
   togglePhotoPublished,
   deletePhoto,
-} from "../Redux/slice/sermonSlice";
+} from "../Redux/slice/Sermonslice";
 
 // ── helpers ──────────────────────────────────────────────
 const formatDate = (d) =>
