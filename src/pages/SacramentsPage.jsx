@@ -13,7 +13,7 @@ import {
   MatrimonySection,
   AnointingSection,
   HolyOrdersSection,
-} from "../UiComponents/ServiceSacraments";
+} from "../UiComponents/Servicesacraments";
 
 // ── Sacrament category headers ─────────────────────────────
 const CategoryHeader = ({ label, title, color }) => (
