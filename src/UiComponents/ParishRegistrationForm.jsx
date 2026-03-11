@@ -5,25 +5,82 @@ import {
   resetStatus,
   setSelectedDate,
 } from "../Redux/slice/ParishUserRegistrationSlice";
-import { Loader2, CheckCircle } from "lucide-react";
+import { Loader2, CheckCircle, ArrowRight } from "lucide-react";
 import logo from "../assets/images/stfaustinaimage.png";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
+import { motion } from "framer-motion";
 import CalenderUi from "./CalenderUi";
+
+const ministryList = [
+  "Choir",
+  "Lector",
+  "Usher",
+  "Youth Ministry",
+  "Catechism",
+];
+
+const sectionTitleStyle = {
+  color: "#1e3a5f",
+  fontFamily: "'Georgia', 'Times New Roman', serif",
+  fontSize: "1.5rem",
+  fontWeight: "bold",
+  marginBottom: "4px",
+};
+
+const inputStyle = {
+  width: "100%",
+  padding: "12px 16px",
+  border: "1px solid #e8e2d9",
+  background: "#faf8f5",
+  outline: "none",
+  fontFamily: "sans-serif",
+  color: "#1e3a5f",
+  fontSize: "0.9rem",
+  borderRadius: 0,
+};
+
+const labelStyle = {
+  display: "block",
+  fontSize: "0.7rem",
+  letterSpacing: "0.2em",
+  textTransform: "uppercase",
+  color: "#c9a84c",
+  fontFamily: "sans-serif",
+  marginBottom: "6px",
+};
+
+const SectionHeader = ({ number, title, accent = "#8B2635" }) => (
+  <div className="flex items-center gap-4 mb-8">
+    <div
+      className="w-10 h-10 flex items-center justify-center flex-shrink-0 text-white font-bold text-sm"
+      style={{ background: accent, fontFamily: "sans-serif" }}
+    >
+      {number}
+    </div>
+    <div>
+      <div
+        style={{
+          height: "2px",
+          width: "40px",
+          background: "#c9a84c",
+          marginBottom: "6px",
+        }}
+      />
+      <h3 style={sectionTitleStyle}>{title}</h3>
+    </div>
+  </div>
+);
 
 export default function ParishRegistrationForm() {
   const dispatch = useDispatch();
-
-  // Safe destructuring with default empty object
   const {
     loading,
     success,
     error: serverError,
-    selectedDates = {}, // ✅ default to {} if undefined
+    selectedDates = {},
   } = useSelector((state) => state.parishRegister);
 
-  // Then parsedDate will work safely
   const parsedDate = {
     dob: selectedDates.dob ? new Date(selectedDates.dob) : null,
     baptismDate: selectedDates.baptismDate
@@ -65,12 +122,10 @@ export default function ParishRegistrationForm() {
   const [error, setError] = useState("");
   const [showModal, setShowModal] = useState(false);
 
-  /* ---------------- Effects ---------------- */
   useEffect(() => {
     if (success) {
       setShowModal(true);
-      toast.success("Registration successful! You can now log in.");
-
+      toast.success("Registration successful!");
       setTimeout(() => {
         setForm({
           fullName: "",
@@ -104,7 +159,6 @@ export default function ParishRegistrationForm() {
           : serverError.message || "Registration failed";
       setError(msg);
       toast.error(msg);
-
       setTimeout(() => {
         dispatch(resetStatus());
         setError("");
@@ -112,7 +166,6 @@ export default function ParishRegistrationForm() {
     }
   }, [serverError, dispatch]);
 
-  /* ---------------- Handlers ---------------- */
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm({ ...form, [name]: value });
@@ -136,12 +189,10 @@ export default function ParishRegistrationForm() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
     if (!form.fullName || !form.email || !form.gender) {
       toast.error("Please fill all required fields");
       return;
     }
-
     const finalPayload = {
       fullName: form.fullName,
       dob: selectedDates.dob || null,
@@ -155,30 +206,24 @@ export default function ParishRegistrationForm() {
       previousParish: form.previousParish,
       ministries: form.ministries,
       accessibility: form.accessibility,
-
       sacraments: {
         baptized: sacraments.baptized === "yes",
         baptismDate:
           sacraments.baptized === "yes" ? selectedDates.baptismDate : null,
         baptismParish: sacraments.baptized === "yes" ? form.baptismParish : "",
-
         communion: sacraments.communion === "yes",
         communionDate:
           sacraments.communion === "yes" ? selectedDates.communionDate : null,
-
         confirmed: sacraments.confirmed === "yes",
         confirmationDate:
           sacraments.confirmed === "yes"
             ? selectedDates.confirmationDate
             : null,
-
         married: sacraments.married === "yes",
         marriageDate:
           sacraments.married === "yes" ? selectedDates.marriageDate : null,
       },
     };
-
-    console.log("FINAL PAYLOAD 👉", finalPayload);
     dispatch(createParishRegistration(finalPayload));
   };
 
@@ -187,457 +232,673 @@ export default function ParishRegistrationForm() {
     dispatch(resetStatus());
   };
 
-  const inputStyle =
-    "w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-700 focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/30 outline-none disabled:bg-gray-100 disabled:cursor-not-allowed";
+  const RadioGroup = ({ name, value, onChange, disabled }) => (
+    <div className="flex gap-6 mt-2">
+      {["yes", "no"].map((opt) => (
+        <label
+          key={opt}
+          className="flex items-center gap-2 cursor-pointer"
+          style={{ fontFamily: "sans-serif" }}
+        >
+          <input
+            type="radio"
+            name={name}
+            value={opt}
+            checked={value === opt}
+            onChange={onChange}
+            disabled={disabled}
+            className="w-4 h-4"
+            style={{ accentColor: "#8B2635" }}
+          />
+          <span className="text-sm capitalize" style={{ color: "#555" }}>
+            {opt === "yes" ? "Yes" : "No"}
+          </span>
+        </label>
+      ))}
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-[#f9f7f4] py-12 px-4 font-inter lg:py-32">
+    <div
+      className="min-h-screen py-12 px-4 lg:py-24"
+      style={{
+        background: "#faf8f5",
+        fontFamily: "'Georgia', 'Times New Roman', serif",
+      }}
+    >
       <ToastContainer position="top-right" autoClose={3000} />
-      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <img src={logo} alt="Parish Logo" className="h-20 mx-auto mb-4" />
-          <h2 className="text-3xl font-bold text-[#1e3a5f]">
-            Parishioner Registration
-          </h2>
-        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* PERSONAL INFORMATION */}
-          <section>
-            <h3 className="text-xl font-semibold text-[#8B2635] mb-4">
-              Personal Information
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <label className="flex flex-col">
-                <span className="mb-1 text-sm font-medium">Full Name *</span>
-                <input
-                  className={inputStyle}
-                  name="fullName"
-                  placeholder="Enter full name"
-                  value={form.fullName}
-                  onChange={handleChange}
-                  disabled={loading}
-                  required
-                />
-              </label>
+      <div className="max-w-4xl mx-auto">
+        {/* Page Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7 }}
+          className="text-center mb-12"
+        >
+          <img src={logo} alt="Parish Logo" className="h-20 mx-auto mb-6" />
+          <p
+            className="text-xs tracking-[0.3em] uppercase mb-3"
+            style={{ color: "#c9a84c", fontFamily: "sans-serif" }}
+          >
+            Join Our Community
+          </p>
+          <h1
+            className="text-4xl md:text-5xl font-bold mb-4"
+            style={{ color: "#1e3a5f", lineHeight: 1.1 }}
+          >
+            Parishioner
+            <br />
+            <span style={{ color: "#8B2635" }}>Registration</span>
+          </h1>
+          <div className="flex items-center justify-center gap-4">
+            <div
+              style={{
+                height: "1px",
+                width: "60px",
+                background: "rgba(201,168,76,0.4)",
+              }}
+            />
+            <span style={{ color: "#c9a84c" }}>✟</span>
+            <div
+              style={{
+                height: "1px",
+                width: "60px",
+                background: "rgba(201,168,76,0.4)",
+              }}
+            />
+          </div>
+          <p
+            className="mt-5 max-w-lg mx-auto text-base leading-relaxed"
+            style={{ color: "#888", fontFamily: "sans-serif", fontWeight: 300 }}
+          >
+            We are delighted to welcome you into the St. Faustina family. Please
+            complete the form below.
+          </p>
+        </motion.div>
 
-              <label className="flex flex-col">
-                <span className="mb-1 text-sm font-medium">Date of Birth</span>
-                <CalenderUi
-                  selectedDate={parsedDate.dob}
-                  setSelectedDate={(date) =>
-                    dispatch(setSelectedDate({ key: "dob", date }))
-                  }
-                />
-              </label>
+        {/* Form Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.15 }}
+          style={{
+            background: "white",
+            border: "1px solid #e8e2d9",
+            boxShadow: "0 8px 40px rgba(0,0,0,0.06)",
+          }}
+        >
+          {/* Gold top bar */}
+          <div
+            style={{
+              height: "4px",
+              background:
+                "linear-gradient(to right, #c9a84c, #e8d5a3, #c9a84c)",
+            }}
+          />
 
-              <label className="flex flex-col">
-                <span className="mb-1 text-sm font-medium">Gender *</span>
-                <select
-                  className={inputStyle}
-                  name="gender"
-                  value={form.gender}
-                  onChange={handleChange}
-                  disabled={loading}
-                  required
-                >
-                  <option value="">Select Gender</option>
-                  <option>Male</option>
-                  <option>Female</option>
-                  <option>Other</option>
-                </select>
-              </label>
-
-              <label className="flex flex-col">
-                <span className="mb-1 text-sm font-medium">Phone Number</span>
-                <input
-                  className={inputStyle}
-                  name="phone"
-                  placeholder="Enter phone number"
-                  value={form.phone}
-                  onChange={handleChange}
-                  disabled={loading}
-                />
-              </label>
-
-              <label className="flex flex-col">
-                <span className="mb-1 text-sm font-medium">Home Address</span>
-                <input
-                  className={inputStyle}
-                  name="address"
-                  placeholder="Enter address"
-                  value={form.address}
-                  onChange={handleChange}
-                  disabled={loading}
-                />
-              </label>
-
-              <label className="flex flex-col">
-                <span className="mb-1 text-sm font-medium">
-                  Email Address *
-                </span>
-                <input
-                  className={inputStyle}
-                  type="email"
-                  name="email"
-                  placeholder="Enter email"
-                  value={form.email}
-                  onChange={handleChange}
-                  disabled={loading}
-                  required
-                />
-              </label>
-
-              <label className="flex flex-col">
-                <span className="mb-1 text-sm font-medium">Occupation</span>
-                <input
-                  className={inputStyle}
-                  name="occupation"
-                  placeholder="Enter occupation"
-                  value={form.occupation}
-                  onChange={handleChange}
-                  disabled={loading}
-                />
-              </label>
-            </div>
-          </section>
-
-          {/* FAMILY INFORMATION */}
-          <section>
-            <h3 className="text-xl font-semibold text-[#8B2635] mb-4">
-              Family Information
-            </h3>
-            <label className="flex flex-col">
-              <span className="mb-1 text-sm font-medium">Marital Status</span>
-              <select
-                className={inputStyle}
-                name="maritalStatus"
-                value={form.maritalStatus}
-                onChange={handleChange}
-                disabled={loading}
-              >
-                <option>Single</option>
-                <option>Married</option>
-                <option>Widowed</option>
-                <option>Divorced</option>
-              </select>
-            </label>
-
-            {form.maritalStatus === "Married" && (
-              <label className="flex flex-col mt-4">
-                <span className="mb-1 text-sm font-medium">Spouse Name</span>
-                <input
-                  className={inputStyle}
-                  name="spouseName"
-                  placeholder="Enter spouse name"
-                  value={form.spouseName}
-                  onChange={handleChange}
-                  disabled={loading}
-                />
-              </label>
-            )}
-          </section>
-
-          {/* SACRAMENTAL INFORMATION */}
-          <section>
-            <h3 className="text-xl font-semibold text-[#8B2635] mb-4">
-              Sacramental Information
-            </h3>
-
-            {/* Baptism */}
-            <div>
-              <p className="font-medium mb-2">Have you been baptized?</p>
-              <div className="flex gap-4 mb-3">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="baptized"
-                    value="yes"
-                    checked={sacraments.baptized === "yes"}
-                    onChange={handleSacramentChange}
-                    disabled={loading}
-                    className="w-4 h-4"
-                  />
-                  <span>Yes</span>
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="baptized"
-                    value="no"
-                    checked={sacraments.baptized === "no"}
-                    onChange={handleSacramentChange}
-                    disabled={loading}
-                    className="w-4 h-4"
-                  />
-                  <span>No</span>
-                </label>
-              </div>
-
-              {sacraments.baptized === "yes" && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <label className="flex flex-col">
-                    <span className="mb-1 text-sm font-medium">
-                      Baptism Date
-                    </span>
-                    <CalenderUi
-                      selectedDate={parsedDate.baptismDate}
-                      setSelectedDate={(date) =>
-                        dispatch(setSelectedDate({ key: "baptismDate", date }))
-                      }
-                    />
+          <form onSubmit={handleSubmit} className="p-8 md:p-12 space-y-14">
+            {/* ── 1. PERSONAL INFORMATION ──────────────────────────── */}
+            <section>
+              <SectionHeader
+                number="01"
+                title="Personal Information"
+                accent="#8B2635"
+              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label style={labelStyle}>
+                    Full Name <span style={{ color: "#8B2635" }}>*</span>
                   </label>
-
-                  <label className="flex flex-col">
-                    <span className="mb-1 text-sm font-medium">
-                      Baptism Parish
-                    </span>
-                    <input
-                      className={inputStyle}
-                      name="baptismParish"
-                      placeholder="Enter parish"
-                      value={form.baptismParish}
-                      onChange={handleChange}
-                      disabled={loading}
-                    />
-                  </label>
+                  <input
+                    style={inputStyle}
+                    name="fullName"
+                    placeholder="Enter full name"
+                    value={form.fullName}
+                    onChange={handleChange}
+                    disabled={loading}
+                    required
+                    onFocus={(e) => (e.target.style.borderColor = "#c9a84c")}
+                    onBlur={(e) => (e.target.style.borderColor = "#e8e2d9")}
+                  />
                 </div>
-              )}
-            </div>
 
-            {/* Communion */}
-            <div>
-              <p className="font-medium mb-2">
-                Have you received First Communion?
-              </p>
-              <div className="flex gap-4 mb-3">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="communion"
-                    value="yes"
-                    checked={sacraments.communion === "yes"}
-                    onChange={handleSacramentChange}
-                    disabled={loading}
-                    className="w-4 h-4"
-                  />
-                  <span>Yes</span>
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="communion"
-                    value="no"
-                    checked={sacraments.communion === "no"}
-                    onChange={handleSacramentChange}
-                    disabled={loading}
-                    className="w-4 h-4"
-                  />
-                  <span>No</span>
-                </label>
-              </div>
-              {sacraments.communion === "yes" && (
-                <CalenderUi
-                  selectedDate={parsedDate.communionDate}
-                  setSelectedDate={(date) =>
-                    dispatch(setSelectedDate({ key: "communionDate", date }))
-                  }
-                />
-              )}
-            </div>
-
-            {/* Confirmation */}
-            <div>
-              <p className="font-medium mb-2">
-                Have you received Confirmation?
-              </p>
-              <div className="flex gap-4 mb-3">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="confirmed"
-                    value="yes"
-                    checked={sacraments.confirmed === "yes"}
-                    onChange={handleSacramentChange}
-                    disabled={loading}
-                    className="w-4 h-4"
-                  />
-                  <span>Yes</span>
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="confirmed"
-                    value="no"
-                    checked={sacraments.confirmed === "no"}
-                    onChange={handleSacramentChange}
-                    disabled={loading}
-                    className="w-4 h-4"
-                  />
-                  <span>No</span>
-                </label>
-              </div>
-              {sacraments.confirmed === "yes" && (
-                <CalenderUi
-                  selectedDate={parsedDate.confirmationDate}
-                  setSelectedDate={(date) =>
-                    dispatch(setSelectedDate({ key: "confirmationDate", date }))
-                  }
-                />
-              )}
-            </div>
-
-            {/* Marriage */}
-            {form.maritalStatus === "Married" && (
-              <div>
-                <p className="font-medium mb-2">
-                  Are you married in the Catholic Church?
-                </p>
-                <div className="flex gap-4 mb-3">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="married"
-                      value="yes"
-                      checked={sacraments.married === "yes"}
-                      onChange={handleSacramentChange}
-                      disabled={loading}
-                      className="w-4 h-4"
-                    />
-                    <span>Yes</span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="married"
-                      value="no"
-                      checked={sacraments.married === "no"}
-                      onChange={handleSacramentChange}
-                      disabled={loading}
-                      className="w-4 h-4"
-                    />
-                    <span>No</span>
-                  </label>
-                </div>
-                {sacraments.married === "yes" && (
+                <div>
+                  <label style={labelStyle}>Date of Birth</label>
                   <CalenderUi
-                    selectedDate={parsedDate.marriageDate}
+                    selectedDate={parsedDate.dob}
                     setSelectedDate={(date) =>
-                      dispatch(setSelectedDate({ key: "marriageDate", date }))
+                      dispatch(setSelectedDate({ key: "dob", date }))
                     }
                   />
+                </div>
+
+                <div>
+                  <label style={labelStyle}>
+                    Gender <span style={{ color: "#8B2635" }}>*</span>
+                  </label>
+                  <select
+                    style={inputStyle}
+                    name="gender"
+                    value={form.gender}
+                    onChange={handleChange}
+                    disabled={loading}
+                    required
+                    onFocus={(e) => (e.target.style.borderColor = "#c9a84c")}
+                    onBlur={(e) => (e.target.style.borderColor = "#e8e2d9")}
+                  >
+                    <option value="">Select Gender</option>
+                    <option>Male</option>
+                    <option>Female</option>
+                    <option>Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={labelStyle}>Phone Number</label>
+                  <input
+                    style={inputStyle}
+                    name="phone"
+                    placeholder="Enter phone number"
+                    value={form.phone}
+                    onChange={handleChange}
+                    disabled={loading}
+                    onFocus={(e) => (e.target.style.borderColor = "#c9a84c")}
+                    onBlur={(e) => (e.target.style.borderColor = "#e8e2d9")}
+                  />
+                </div>
+
+                <div>
+                  <label style={labelStyle}>Home Address</label>
+                  <input
+                    style={inputStyle}
+                    name="address"
+                    placeholder="Enter address"
+                    value={form.address}
+                    onChange={handleChange}
+                    disabled={loading}
+                    onFocus={(e) => (e.target.style.borderColor = "#c9a84c")}
+                    onBlur={(e) => (e.target.style.borderColor = "#e8e2d9")}
+                  />
+                </div>
+
+                <div>
+                  <label style={labelStyle}>
+                    Email Address <span style={{ color: "#8B2635" }}>*</span>
+                  </label>
+                  <input
+                    style={inputStyle}
+                    type="email"
+                    name="email"
+                    placeholder="Enter email"
+                    value={form.email}
+                    onChange={handleChange}
+                    disabled={loading}
+                    required
+                    onFocus={(e) => (e.target.style.borderColor = "#c9a84c")}
+                    onBlur={(e) => (e.target.style.borderColor = "#e8e2d9")}
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label style={labelStyle}>Occupation</label>
+                  <input
+                    style={inputStyle}
+                    name="occupation"
+                    placeholder="Enter occupation"
+                    value={form.occupation}
+                    onChange={handleChange}
+                    disabled={loading}
+                    onFocus={(e) => (e.target.style.borderColor = "#c9a84c")}
+                    onBlur={(e) => (e.target.style.borderColor = "#e8e2d9")}
+                  />
+                </div>
+              </div>
+            </section>
+
+            <div style={{ height: "1px", background: "#f0ece4" }} />
+
+            {/* ── 2. FAMILY INFORMATION ────────────────────────────── */}
+            <section>
+              <SectionHeader
+                number="02"
+                title="Family Information"
+                accent="#1e3a5f"
+              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label style={labelStyle}>Marital Status</label>
+                  <select
+                    style={inputStyle}
+                    name="maritalStatus"
+                    value={form.maritalStatus}
+                    onChange={handleChange}
+                    disabled={loading}
+                    onFocus={(e) => (e.target.style.borderColor = "#c9a84c")}
+                    onBlur={(e) => (e.target.style.borderColor = "#e8e2d9")}
+                  >
+                    <option>Single</option>
+                    <option>Married</option>
+                    <option>Widowed</option>
+                    <option>Divorced</option>
+                  </select>
+                </div>
+
+                {form.maritalStatus === "Married" && (
+                  <div>
+                    <label style={labelStyle}>Spouse Name</label>
+                    <input
+                      style={inputStyle}
+                      name="spouseName"
+                      placeholder="Enter spouse name"
+                      value={form.spouseName}
+                      onChange={handleChange}
+                      disabled={loading}
+                      onFocus={(e) => (e.target.style.borderColor = "#c9a84c")}
+                      onBlur={(e) => (e.target.style.borderColor = "#e8e2d9")}
+                    />
+                  </div>
                 )}
               </div>
-            )}
-          </section>
+            </section>
 
-          {/* PARISH LIFE */}
-          <section>
-            <h3 className="text-xl font-semibold text-[#8B2635] mb-4">
-              Parish Life
-            </h3>
-            <label className="flex flex-col">
-              <span className="mb-1 text-sm font-medium">Previous Parish</span>
-              <input
-                className={inputStyle}
-                name="previousParish"
-                placeholder="Enter previous parish"
-                value={form.previousParish}
-                onChange={handleChange}
-                disabled={loading}
+            <div style={{ height: "1px", background: "#f0ece4" }} />
+
+            {/* ── 3. SACRAMENTAL INFORMATION ───────────────────────── */}
+            <section>
+              <SectionHeader
+                number="03"
+                title="Sacramental Information"
+                accent="#8B2635"
               />
-            </label>
+              <div className="space-y-8">
+                {/* Baptism */}
+                <div
+                  className="p-6"
+                  style={{
+                    border: "1px solid #e8e2d9",
+                    borderLeft: "4px solid #8B2635",
+                  }}
+                >
+                  <p
+                    className="text-xs tracking-widest uppercase mb-1"
+                    style={{ color: "#c9a84c", fontFamily: "sans-serif" }}
+                  >
+                    Sacrament
+                  </p>
+                  <p className="font-bold mb-3" style={{ color: "#1e3a5f" }}>
+                    Have you been baptized?
+                  </p>
+                  <RadioGroup
+                    name="baptized"
+                    value={sacraments.baptized}
+                    onChange={handleSacramentChange}
+                    disabled={loading}
+                  />
+                  {sacraments.baptized === "yes" && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+                      <div>
+                        <label style={labelStyle}>Baptism Date</label>
+                        <CalenderUi
+                          selectedDate={parsedDate.baptismDate}
+                          setSelectedDate={(date) =>
+                            dispatch(
+                              setSelectedDate({ key: "baptismDate", date }),
+                            )
+                          }
+                        />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Baptism Parish</label>
+                        <input
+                          style={inputStyle}
+                          name="baptismParish"
+                          placeholder="Enter parish"
+                          value={form.baptismParish}
+                          onChange={handleChange}
+                          disabled={loading}
+                          onFocus={(e) =>
+                            (e.target.style.borderColor = "#c9a84c")
+                          }
+                          onBlur={(e) =>
+                            (e.target.style.borderColor = "#e8e2d9")
+                          }
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
 
-            <div className="mt-4">
-              <p className="font-medium mb-2">
-                Ministries (Select all that apply)
-              </p>
-              <div className="space-y-2">
-                {[
-                  "Choir",
-                  "Lector",
-                  "Usher",
-                  "Youth Ministry",
-                  "Catechism",
-                ].map((m) => (
-                  <label key={m} className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      value={m}
-                      checked={form.ministries.includes(m)}
-                      onChange={handleMinistryChange}
+                {/* Communion */}
+                <div
+                  className="p-6"
+                  style={{
+                    border: "1px solid #e8e2d9",
+                    borderLeft: "4px solid #1e3a5f",
+                  }}
+                >
+                  <p
+                    className="text-xs tracking-widest uppercase mb-1"
+                    style={{ color: "#c9a84c", fontFamily: "sans-serif" }}
+                  >
+                    Sacrament
+                  </p>
+                  <p className="font-bold mb-3" style={{ color: "#1e3a5f" }}>
+                    Have you received First Communion?
+                  </p>
+                  <RadioGroup
+                    name="communion"
+                    value={sacraments.communion}
+                    onChange={handleSacramentChange}
+                    disabled={loading}
+                  />
+                  {sacraments.communion === "yes" && (
+                    <div className="mt-5">
+                      <label style={labelStyle}>Communion Date</label>
+                      <CalenderUi
+                        selectedDate={parsedDate.communionDate}
+                        setSelectedDate={(date) =>
+                          dispatch(
+                            setSelectedDate({ key: "communionDate", date }),
+                          )
+                        }
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Confirmation */}
+                <div
+                  className="p-6"
+                  style={{
+                    border: "1px solid #e8e2d9",
+                    borderLeft: "4px solid #8B2635",
+                  }}
+                >
+                  <p
+                    className="text-xs tracking-widest uppercase mb-1"
+                    style={{ color: "#c9a84c", fontFamily: "sans-serif" }}
+                  >
+                    Sacrament
+                  </p>
+                  <p className="font-bold mb-3" style={{ color: "#1e3a5f" }}>
+                    Have you received Confirmation?
+                  </p>
+                  <RadioGroup
+                    name="confirmed"
+                    value={sacraments.confirmed}
+                    onChange={handleSacramentChange}
+                    disabled={loading}
+                  />
+                  {sacraments.confirmed === "yes" && (
+                    <div className="mt-5">
+                      <label style={labelStyle}>Confirmation Date</label>
+                      <CalenderUi
+                        selectedDate={parsedDate.confirmationDate}
+                        setSelectedDate={(date) =>
+                          dispatch(
+                            setSelectedDate({ key: "confirmationDate", date }),
+                          )
+                        }
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Marriage */}
+                {form.maritalStatus === "Married" && (
+                  <div
+                    className="p-6"
+                    style={{
+                      border: "1px solid #e8e2d9",
+                      borderLeft: "4px solid #1e3a5f",
+                    }}
+                  >
+                    <p
+                      className="text-xs tracking-widest uppercase mb-1"
+                      style={{ color: "#c9a84c", fontFamily: "sans-serif" }}
+                    >
+                      Sacrament
+                    </p>
+                    <p className="font-bold mb-3" style={{ color: "#1e3a5f" }}>
+                      Are you married in the Catholic Church?
+                    </p>
+                    <RadioGroup
+                      name="married"
+                      value={sacraments.married}
+                      onChange={handleSacramentChange}
                       disabled={loading}
-                      className="w-4 h-4"
                     />
-                    <span>{m}</span>
-                  </label>
-                ))}
+                    {sacraments.married === "yes" && (
+                      <div className="mt-5">
+                        <label style={labelStyle}>Marriage Date</label>
+                        <CalenderUi
+                          selectedDate={parsedDate.marriageDate}
+                          setSelectedDate={(date) =>
+                            dispatch(
+                              setSelectedDate({ key: "marriageDate", date }),
+                            )
+                          }
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            </div>
+            </section>
 
-            <label className="flex flex-col mt-4">
-              <span className="mb-1 text-sm font-medium">
-                Accessibility Needs (if any)
-              </span>
-              <input
-                className={inputStyle}
-                name="accessibility"
-                placeholder="Enter any accessibility needs"
-                value={form.accessibility}
-                onChange={handleChange}
-                disabled={loading}
-              />
-            </label>
-          </section>
+            <div style={{ height: "1px", background: "#f0ece4" }} />
 
-          {/* ACCOUNT SECURITY */}
-          <section>
+            {/* ── 4. PARISH LIFE ───────────────────────────────────── */}
+            <section>
+              <SectionHeader number="04" title="Parish Life" accent="#1e3a5f" />
+              <div className="space-y-6">
+                <div>
+                  <label style={labelStyle}>Previous Parish</label>
+                  <input
+                    style={inputStyle}
+                    name="previousParish"
+                    placeholder="Enter previous parish"
+                    value={form.previousParish}
+                    onChange={handleChange}
+                    disabled={loading}
+                    onFocus={(e) => (e.target.style.borderColor = "#c9a84c")}
+                    onBlur={(e) => (e.target.style.borderColor = "#e8e2d9")}
+                  />
+                </div>
+
+                <div>
+                  <label style={labelStyle}>
+                    Ministries (Select all that apply)
+                  </label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-2">
+                    {ministryList.map((m) => (
+                      <label
+                        key={m}
+                        className="flex items-center gap-3 p-3 cursor-pointer transition-all"
+                        style={{
+                          border: `1px solid ${form.ministries.includes(m) ? "#c9a84c" : "#e8e2d9"}`,
+                          background: form.ministries.includes(m)
+                            ? "#faf8f5"
+                            : "white",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          value={m}
+                          checked={form.ministries.includes(m)}
+                          onChange={handleMinistryChange}
+                          disabled={loading}
+                          style={{
+                            accentColor: "#8B2635",
+                            width: "16px",
+                            height: "16px",
+                          }}
+                        />
+                        <span
+                          className="text-sm"
+                          style={{ color: "#555", fontFamily: "sans-serif" }}
+                        >
+                          {m}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label style={labelStyle}>Accessibility Needs (if any)</label>
+                  <input
+                    style={inputStyle}
+                    name="accessibility"
+                    placeholder="Enter any accessibility needs"
+                    value={form.accessibility}
+                    onChange={handleChange}
+                    disabled={loading}
+                    onFocus={(e) => (e.target.style.borderColor = "#c9a84c")}
+                    onBlur={(e) => (e.target.style.borderColor = "#e8e2d9")}
+                  />
+                </div>
+              </div>
+            </section>
+
+            {/* Error */}
             {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-600 text-sm">{error}</p>
+              <div
+                className="p-4"
+                style={{
+                  background: "#fff5f5",
+                  border: "1px solid #fed7d7",
+                  borderLeft: "4px solid #e53e3e",
+                }}
+              >
+                <p
+                  className="text-sm"
+                  style={{ color: "#c53030", fontFamily: "sans-serif" }}
+                >
+                  {error}
+                </p>
               </div>
             )}
-          </section>
-          {/* SUBMIT */}
-          <div className="text-center pt-6">
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-[#8B2635] text-white px-10 py-3 rounded-full hover:bg-[#6d1d28] transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 mx-auto"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="animate-spin" size={20} />
-                  Registering...
-                </>
-              ) : (
-                "Register"
-              )}
-            </button>
-          </div>
-        </form>
+
+            {/* Submit */}
+            <div className="text-center pt-4">
+              <button
+                type="submit"
+                disabled={loading}
+                className="inline-flex items-center justify-center gap-2 px-12 py-4 text-xs font-bold tracking-widest uppercase transition-all group"
+                style={{
+                  background: loading ? "#ccc" : "#c9a84c",
+                  color: "#0a0a0a",
+                  fontFamily: "sans-serif",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  clipPath:
+                    "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))",
+                }}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="animate-spin" size={16} />{" "}
+                    Registering...
+                  </>
+                ) : (
+                  <>
+                    Register Now{" "}
+                    <ArrowRight
+                      size={14}
+                      className="group-hover:translate-x-1 transition-transform"
+                    />
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </motion.div>
       </div>
 
-      {/* Success Modal */}
+      {/* ── Success Modal ──────────────────────────────────────────── */}
       {showModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-          <div className="bg-white p-8 rounded-xl max-w-md text-center shadow-xl">
-            <CheckCircle size={64} className="text-green-600 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-[#1e3a5f] mb-3">
-              Registration Successful
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Your registration has been received. The parish office will
-              contact you if further information is required.
-            </p>
-            <button
-              onClick={handleModalClose}
-              className="bg-[#8B2635] text-white px-8 py-3 rounded-full"
-            >
-              Close
-            </button>
-          </div>
+        <div
+          className="fixed inset-0 flex items-center justify-center z-50"
+          style={{ background: "rgba(0,0,0,0.6)" }}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4 }}
+            className="max-w-md w-full mx-4 text-center"
+            style={{
+              background: "white",
+              border: "1px solid #e8e2d9",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+            }}
+          >
+            <div
+              style={{
+                height: "4px",
+                background:
+                  "linear-gradient(to right, #c9a84c, #e8d5a3, #c9a84c)",
+              }}
+            />
+            <div className="p-10">
+              <CheckCircle
+                size={56}
+                className="mx-auto mb-5"
+                style={{ color: "#16a34a" }}
+              />
+              <p
+                className="text-xs tracking-[0.3em] uppercase mb-2"
+                style={{ color: "#c9a84c", fontFamily: "sans-serif" }}
+              >
+                Welcome to the Parish
+              </p>
+              <h2
+                className="text-3xl font-bold mb-4"
+                style={{ color: "#1e3a5f" }}
+              >
+                Registration
+                <br />
+                Successful
+              </h2>
+              <div className="flex items-center justify-center gap-4 mb-5">
+                <div
+                  style={{
+                    height: "1px",
+                    width: "40px",
+                    background: "rgba(201,168,76,0.4)",
+                  }}
+                />
+                <span style={{ color: "#c9a84c" }}>✟</span>
+                <div
+                  style={{
+                    height: "1px",
+                    width: "40px",
+                    background: "rgba(201,168,76,0.4)",
+                  }}
+                />
+              </div>
+              <p
+                className="text-sm leading-relaxed mb-8"
+                style={{ color: "#888", fontFamily: "sans-serif" }}
+              >
+                Your registration has been received. The parish office will
+                contact you if further information is required.
+              </p>
+              <button
+                onClick={handleModalClose}
+                className="inline-flex items-center justify-center gap-2 px-8 py-3 text-xs font-bold tracking-widest uppercase"
+                style={{
+                  background: "#c9a84c",
+                  color: "#0a0a0a",
+                  fontFamily: "sans-serif",
+                  clipPath:
+                    "polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))",
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </motion.div>
         </div>
       )}
     </div>

@@ -7,163 +7,343 @@ import {
   Facebook,
   Instagram,
   Youtube,
+  ArrowRight,
+  Clock,
 } from "lucide-react";
 
 export function Footer() {
   return (
-    <footer className="bg-[#1e3a5f] text-white font-inter">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {/* About Section */}
-          <div className="flex flex-col items-center text-center px-4">
-            {/* Logo */}
-
-            {/* Parish Info */}
-            <div>
-              <div className="flex items-center gap-2 justify-center mb-4">
-                <div className="mb-4">
-                  <img
-                    src={logo}
-                    alt="St. Faustina Parish"
-                    className="w-14 h-14 rounded-full object-cover border-4 border-[#8B2635]"
-                  />
+    <footer style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}>
+      {/* ── MAIN FOOTER BODY ──────────────────────────────────── */}
+      <div style={{ background: "#0f2240", borderTop: "3px solid #c9a84c" }}>
+        <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16 py-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+            {/* ── Col 1: Brand ── */}
+            <div className="lg:col-span-1">
+              <div className="flex items-center gap-3 mb-5">
+                <img
+                  src={logo}
+                  alt="Sts. Peter & Paul Parish"
+                  className="w-12 h-12 object-cover"
+                  style={{ border: "2px solid #c9a84c" }}
+                />
+                <div>
+                  <h3
+                    className="font-bold leading-tight text-white"
+                    style={{ fontSize: "0.95rem" }}
+                  >
+                    Sts. Peter &amp; Paul
+                  </h3>
+                  <p
+                    className="text-xs tracking-widest uppercase"
+                    style={{ color: "#c9a84c", fontFamily: "sans-serif" }}
+                  >
+                    Catholic Parish
+                  </p>
                 </div>
-
-                <h3 className="text-white m-0">
-                  St. Faustina{"\u2019"}s Parish
-                </h3>
               </div>
-              <p className="text-gray-300 mb-4">
+
+              <p
+                className="text-sm leading-relaxed mb-6"
+                style={{
+                  color: "rgba(255,255,255,0.5)",
+                  fontFamily: "sans-serif",
+                  fontWeight: 300,
+                }}
+              >
                 A welcoming Catholic community dedicated to faith, worship, and
-                service since 1892.
+                service — rooted in the tradition of the Apostles Peter and
+                Paul.
               </p>
+
+              {/* Social icons */}
+              <div className="flex gap-3">
+                {[
+                  { href: "https://facebook.com", Icon: Facebook },
+                  { href: "https://instagram.com", Icon: Instagram },
+                  { href: "https://youtube.com", Icon: Youtube },
+                ].map(({ href, Icon }) => (
+                  <a
+                    key={href}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-9 h-9 flex items-center justify-center transition-all"
+                    style={{
+                      border: "1px solid rgba(201,168,76,0.3)",
+                      color: "rgba(255,255,255,0.4)",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "#c9a84c";
+                      e.currentTarget.style.color = "#0a0a0a";
+                      e.currentTarget.style.borderColor = "#c9a84c";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                      e.currentTarget.style.color = "rgba(255,255,255,0.4)";
+                      e.currentTarget.style.borderColor =
+                        "rgba(201,168,76,0.3)";
+                    }}
+                  >
+                    <Icon size={15} />
+                  </a>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Quick Links */}
-          <div>
-            <h4 className="text-white mb-4">Quick Links</h4>
-            <ul className="space-y-2">
-              <li>
-                <Link
-                  to="/about"
-                  className="text-gray-300 hover:text-[#d4af37] transition-colors"
-                >
-                  About Us
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/sacraments"
-                  className="text-gray-300 hover:text-[#d4af37] transition-colors"
-                >
-                  Sacraments
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/mass-schedule"
-                  className="text-gray-300 hover:text-[#d4af37] transition-colors"
-                >
-                  Mass Schedule
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/book-appointment"
-                  className="text-gray-300 hover:text-[#d4af37] transition-colors"
-                >
-                  Book Appointment
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/sermons"
-                  className="text-gray-300 hover:text-[#d4af37] transition-colors"
-                >
-                  Sermons & Media
-                </Link>
-              </li>
-            </ul>
-          </div>
+            {/* ── Col 2: Quick Links ── */}
+            <div>
+              <p
+                className="text-xs tracking-[0.25em] uppercase mb-2"
+                style={{ color: "#c9a84c", fontFamily: "sans-serif" }}
+              >
+                Navigate
+              </p>
+              <h4
+                className="font-bold mb-5 text-white"
+                style={{ fontSize: "1rem" }}
+              >
+                Quick Links
+              </h4>
+              <div
+                className="mb-5"
+                style={{ height: "1px", background: "rgba(201,168,76,0.2)" }}
+              />
+              <ul className="flex flex-col gap-3">
+                {[
+                  { label: "About Us", to: "/about" },
+                  { label: "Sacraments", to: "/sacraments" },
+                  { label: "Mass Schedule", to: "/mass-schedule" },
+                  { label: "Book Appointment", to: "/book-appointment" },
+                  { label: "Sermons & Media", to: "/sermons" },
+                  { label: "Parish Registration", to: "/register" },
+                  { label: "Contact Us", to: "/contact" },
+                ].map((link) => (
+                  <li key={link.label}>
+                    <Link
+                      to={link.to}
+                      className="flex items-center gap-2 text-sm group transition-all"
+                      style={{
+                        color: "rgba(255,255,255,0.5)",
+                        fontFamily: "sans-serif",
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.color = "#c9a84c")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.color = "rgba(255,255,255,0.5)")
+                      }
+                    >
+                      <ArrowRight
+                        size={12}
+                        style={{ color: "#c9a84c", flexShrink: 0 }}
+                        className="group-hover:translate-x-1 transition-transform"
+                      />
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
 
-          {/* Contact Info */}
-          <div>
-            <h4 className="text-white mb-4">Contact Us</h4>
-            <ul className="space-y-3">
-              <li className="flex items-start gap-2">
-                <MapPin className="w-5 h-5 text-[#d4af37] flex-shrink-0 mt-0.5" />
-                <span className="text-gray-300">
-                  123 Church Street
-                  <br />
-                  Springfield, IL 62701
-                </span>
-              </li>
-              <li className="flex items-center gap-2">
-                <Phone className="w-5 h-5 text-[#d4af37] flex-shrink-0" />
-                <a
-                  href="tel:+12175551234"
-                  className="text-gray-300 hover:text-[#d4af37] transition-colors"
-                >
-                  (217) 555-1234
-                </a>
-              </li>
-              <li className="flex items-center gap-2">
-                <Mail className="w-5 h-5 text-[#d4af37] flex-shrink-0" />
-                <a
-                  href="mailto:parish@stmichaels.org"
-                  className="text-gray-300 hover:text-[#d4af37] transition-colors"
-                >
-                  parish@stmichaels.org
-                </a>
-              </li>
-            </ul>
-          </div>
+            {/* ── Col 3: Contact ── */}
+            <div>
+              <p
+                className="text-xs tracking-[0.25em] uppercase mb-2"
+                style={{ color: "#c9a84c", fontFamily: "sans-serif" }}
+              >
+                Get In Touch
+              </p>
+              <h4
+                className="font-bold mb-5 text-white"
+                style={{ fontSize: "1rem" }}
+              >
+                Contact Us
+              </h4>
+              <div
+                className="mb-5"
+                style={{ height: "1px", background: "rgba(201,168,76,0.2)" }}
+              />
+              <ul className="flex flex-col gap-4">
+                <li className="flex items-start gap-3">
+                  <MapPin
+                    size={14}
+                    style={{
+                      color: "#c9a84c",
+                      marginTop: "3px",
+                      flexShrink: 0,
+                    }}
+                  />
+                  <span
+                    className="text-sm leading-relaxed"
+                    style={{
+                      color: "rgba(255,255,255,0.5)",
+                      fontFamily: "sans-serif",
+                    }}
+                  >
+                    123 Church Street
+                    <br />
+                    Springfield, IL 62701
+                  </span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Phone
+                    size={14}
+                    style={{ color: "#c9a84c", flexShrink: 0 }}
+                  />
+                  <a
+                    href="tel:+12175551234"
+                    className="text-sm transition-colors"
+                    style={{
+                      color: "rgba(255,255,255,0.5)",
+                      fontFamily: "sans-serif",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.color = "#c9a84c")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.color = "rgba(255,255,255,0.5)")
+                    }
+                  >
+                    (217) 555-1234
+                  </a>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Mail size={14} style={{ color: "#c9a84c", flexShrink: 0 }} />
+                  <a
+                    href="mailto:info@sspeterandpaul.org"
+                    className="text-sm transition-colors"
+                    style={{
+                      color: "rgba(255,255,255,0.5)",
+                      fontFamily: "sans-serif",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.color = "#c9a84c")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.color = "rgba(255,255,255,0.5)")
+                    }
+                  >
+                    info@sspeterandpaul.org
+                  </a>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Clock
+                    size={14}
+                    style={{
+                      color: "#c9a84c",
+                      marginTop: "3px",
+                      flexShrink: 0,
+                    }}
+                  />
+                  <span
+                    className="text-sm leading-relaxed"
+                    style={{
+                      color: "rgba(255,255,255,0.5)",
+                      fontFamily: "sans-serif",
+                    }}
+                  >
+                    Mon – Fri: 9:00 AM – 5:00 PM
+                    <br />
+                    Saturday: 10:00 AM – 2:00 PM
+                    <br />
+                    Sunday: Closed
+                  </span>
+                </li>
+              </ul>
+            </div>
 
-          {/* Hours & Social */}
-          <div>
-            <h4 className="text-white mb-4">Office Hours</h4>
-            <p className="text-gray-300 mb-4">
-              Monday - Friday: 9:00 AM - 5:00 PM
-              <br />
-              Saturday: 10:00 AM - 2:00 PM
-              <br />
-              Sunday: Closed
-            </p>
-            <h4 className="text-white mb-3">Follow Us</h4>
-            <div className="flex gap-3">
-              <a
-                href="https://facebook.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 bg-[#8B2635] rounded-full flex items-center justify-center hover:bg-[#6d1d2a] transition-colors"
+            {/* ── Col 4: Newsletter ── */}
+            <div>
+              <p
+                className="text-xs tracking-[0.25em] uppercase mb-2"
+                style={{ color: "#c9a84c", fontFamily: "sans-serif" }}
               >
-                <Facebook className="w-5 h-5 text-white" />
-              </a>
-              <a
-                href="https://instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 bg-[#8B2635] rounded-full flex items-center justify-center hover:bg-[#6d1d2a] transition-colors"
+                Stay Connected
+              </p>
+              <h4
+                className="font-bold mb-5 text-white"
+                style={{ fontSize: "1rem" }}
               >
-                <Instagram className="w-5 h-5 text-white" />
-              </a>
-              <a
-                href="https://youtube.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 bg-[#8B2635] rounded-full flex items-center justify-center hover:bg-[#6d1d2a] transition-colors"
+                Parish Newsletter
+              </h4>
+              <div
+                className="mb-5"
+                style={{ height: "1px", background: "rgba(201,168,76,0.2)" }}
+              />
+              <p
+                className="text-sm leading-relaxed mb-5"
+                style={{
+                  color: "rgba(255,255,255,0.5)",
+                  fontFamily: "sans-serif",
+                }}
               >
-                <Youtube className="w-5 h-5 text-white" />
-              </a>
+                Receive weekly bulletins, upcoming events, and spiritual
+                reflections directly in your inbox.
+              </p>
+              <div className="flex flex-col gap-3">
+                <input
+                  type="email"
+                  placeholder="Your email address"
+                  className="w-full px-4 py-3 text-sm outline-none"
+                  style={{
+                    background: "rgba(255,255,255,0.05)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    color: "white",
+                    fontFamily: "sans-serif",
+                  }}
+                />
+                <button
+                  className="w-full py-3 text-xs font-bold tracking-widest uppercase transition-all"
+                  style={{
+                    background: "#c9a84c",
+                    color: "#0a0a0a",
+                    fontFamily: "sans-serif",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background = "#b8962e")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "#c9a84c")
+                  }
+                >
+                  Subscribe
+                </button>
+              </div>
+              <p
+                className="text-xs mt-3"
+                style={{
+                  color: "rgba(255,255,255,0.25)",
+                  fontFamily: "sans-serif",
+                }}
+              >
+                We respect your privacy. Unsubscribe at any time.
+              </p>
             </div>
           </div>
         </div>
 
-        <div className="border-t border-gray-600 mt-8 pt-8 text-center text-gray-300">
-          <p>
-            &copy; {new Date().getFullYear()} St. Faustina {"\u2019"}s Parish.
-            All rights reserved.
+        {/* ── Divider ── */}
+        <div
+          className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16"
+          style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}
+        />
+
+        {/* ── Bottom bar ── */}
+        <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16 py-6 flex flex-col md:flex-row items-center justify-between gap-4">
+          <p
+            className="text-xs text-center md:text-left"
+            style={{ color: "rgba(255,255,255,0.3)", fontFamily: "sans-serif" }}
+          >
+            &copy; {new Date().getFullYear()} Sts. Peter &amp; Paul Catholic
+            Parish. All rights reserved.
+          </p>
+          <p
+            className="text-xs italic text-center"
+            style={{ color: "rgba(255,255,255,0.25)" }}
+          >
+            "You are Peter, and upon this rock I will build my Church." —
+            Matthew 16:18
           </p>
         </div>
       </div>

@@ -2,3 +2,4 @@
 
 Ss. Peter and Paul Catholic Church, Shomolu
 @peterpaulsomolu
+Georgia', 'Times New Roman', serif

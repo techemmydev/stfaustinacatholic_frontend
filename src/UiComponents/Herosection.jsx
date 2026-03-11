@@ -4,12 +4,13 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import hero1 from "../assets/images/stfaustinaimage.png";
 import hero3 from "../assets/images/cross1.avif";
 import hero2 from "../assets/images/slide4.avif";
+import hero4 from "../assets/images/slide5.avif";
 
 const slides = [
   {
     image: hero1,
-    // tag: "Divine Mercy",
-    title: "Welcome to\nSts. Peter & Paul\nCatholic Parish",
+    tag: "Divine Mercy",
+    title: "Welcome to\nSs. Peter & Paul\nCatholic Parish",
     subtitle:
       "A Catholic community devoted to Divine Mercy, prayer, and service.",
     verse: "Jesus, I trust in You.",
@@ -17,7 +18,7 @@ const slides = [
   },
   {
     image: hero2,
-    // tag: "Community",
+    tag: "Community",
     title: "United in\nFaith\nand Love",
     subtitle: "Growing together through the Sacraments and the Word of God.",
     verse: "Where two or three are gathered in my name, I am there.",
@@ -25,11 +26,19 @@ const slides = [
   },
   {
     image: hero3,
-    // tag: "Ministry",
+    tag: "Ministry",
     title: "Serving\nGod &\nNeighbor",
     subtitle: "Living the Gospel through charity, ministry, and compassion.",
     verse: "Be merciful, just as your Father is merciful.",
     author: "— Luke 6:36",
+  },
+  {
+    image: hero4, //adda nwe content here
+    tag: "Worship",
+    title: "Praise &\nAdoration",
+    subtitle: "Lifting our hearts in worship and adoration to our Lord.",
+    verse: "Let everything that has breath praise the Lord!",
+    author: "— Psalm 150:6",
   },
 ];
 
@@ -116,7 +125,7 @@ const Herosection = () => {
                   className="inline-flex items-center gap-2 mb-6"
                 >
                   <span
-                    className="text-xs font-semibold tracking-[0.25em] uppercase px-4 py-1.5 border rounded-full"
+                    className="text-xs font-semibold tracking-[0.25em] uppercase px-4 py-1.5 border rounded-full hidden "
                     style={{
                       color: "#c9a84c",
                       borderColor: "#c9a84c55",
