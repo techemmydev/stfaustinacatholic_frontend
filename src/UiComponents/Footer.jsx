@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router";
 import logo from "../assets/images/stfaustinaimage.png";
 import {
@@ -10,15 +12,25 @@ import {
   ArrowRight,
   Clock,
 } from "lucide-react";
+import { fetchPublishedMassSchedules } from "../Redux/slice/Massscheduleslice";
 
 export function Footer() {
+  const dispatch = useDispatch();
+  const { publishedSchedules, loading } = useSelector((s) => s.massSchedule);
+
+  useEffect(() => {
+    dispatch(fetchPublishedMassSchedules());
+  }, [dispatch]);
+
+  // show first 4 from backend
+  const footerSchedules = publishedSchedules.slice(0, 4);
+
   return (
     <footer style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}>
-      {/* ── MAIN FOOTER BODY ──────────────────────────────────── */}
       <div style={{ background: "#0f2240", borderTop: "3px solid #c9a84c" }}>
         <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16 py-16">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
-            {/* ── Col 1: Brand ── */}
+            {/* Col 1: Brand */}
             <div className="lg:col-span-1">
               <div className="flex items-center gap-3 mb-5">
                 <img
@@ -42,7 +54,6 @@ export function Footer() {
                   </p>
                 </div>
               </div>
-
               <p
                 className="text-sm leading-relaxed mb-6"
                 style={{
@@ -55,8 +66,6 @@ export function Footer() {
                 service — rooted in the tradition of the Apostles Peter and
                 Paul.
               </p>
-
-              {/* Social icons */}
               <div className="flex gap-3">
                 {[
                   { href: "https://facebook.com", Icon: Facebook },
@@ -91,7 +100,7 @@ export function Footer() {
               </div>
             </div>
 
-            {/* ── Col 2: Quick Links ── */}
+            {/* Col 2: Quick Links */}
             <div>
               <p
                 className="text-xs tracking-[0.25em] uppercase mb-2"
@@ -146,7 +155,7 @@ export function Footer() {
               </ul>
             </div>
 
-            {/* ── Col 3: Contact ── */}
+            {/* Col 3: Contact */}
             <div>
               <p
                 className="text-xs tracking-[0.25em] uppercase mb-2"
@@ -253,83 +262,116 @@ export function Footer() {
               </ul>
             </div>
 
-            {/* ── Col 4: Newsletter ── */}
+            {/* Col 4: Mass Times — from backend */}
             <div>
               <p
                 className="text-xs tracking-[0.25em] uppercase mb-2"
                 style={{ color: "#c9a84c", fontFamily: "sans-serif" }}
               >
-                Stay Connected
+                Liturgical Schedule
               </p>
               <h4
                 className="font-bold mb-5 text-white"
                 style={{ fontSize: "1rem" }}
               >
-                Parish Newsletter
+                Mass Times
               </h4>
               <div
                 className="mb-5"
                 style={{ height: "1px", background: "rgba(201,168,76,0.2)" }}
               />
-              <p
-                className="text-sm leading-relaxed mb-5"
-                style={{
-                  color: "rgba(255,255,255,0.5)",
-                  fontFamily: "sans-serif",
-                }}
-              >
-                Receive weekly bulletins, upcoming events, and spiritual
-                reflections directly in your inbox.
-              </p>
-              <div className="flex flex-col gap-3">
-                <input
-                  type="email"
-                  placeholder="Your email address"
-                  className="w-full px-4 py-3 text-sm outline-none"
+
+              {/* Loading skeleton */}
+              {loading && (
+                <div className="flex flex-col gap-3">
+                  {[...Array(4)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="animate-pulse"
+                      style={{
+                        height: "36px",
+                        background: "rgba(255,255,255,0.05)",
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Backend data */}
+              {!loading && footerSchedules.length > 0 && (
+                <ul className="flex flex-col gap-3">
+                  {footerSchedules.map((mass) => (
+                    <li
+                      key={mass._id}
+                      className="flex flex-col gap-0.5 pb-3"
+                      style={{
+                        borderBottom: "1px solid rgba(255,255,255,0.05)",
+                      }}
+                    >
+                      <span
+                        className="text-xs font-semibold tracking-wide"
+                        style={{ color: "#c9a84c", fontFamily: "sans-serif" }}
+                      >
+                        {mass.day}
+                      </span>
+                      <span
+                        className="text-sm"
+                        style={{
+                          color: "rgba(255,255,255,0.45)",
+                          fontFamily: "sans-serif",
+                          fontWeight: 300,
+                        }}
+                      >
+                        {mass.time}
+                        {mass.location && (
+                          <span style={{ color: "rgba(255,255,255,0.25)" }}>
+                            {" "}
+                            · {mass.location}
+                          </span>
+                        )}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {/* Empty state */}
+              {!loading && footerSchedules.length === 0 && (
+                <p
+                  className="text-sm"
                   style={{
-                    background: "rgba(255,255,255,0.05)",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    color: "white",
+                    color: "rgba(255,255,255,0.3)",
                     fontFamily: "sans-serif",
                   }}
-                />
-                <button
-                  className="w-full py-3 text-xs font-bold tracking-widest uppercase transition-all"
-                  style={{
-                    background: "#c9a84c",
-                    color: "#0a0a0a",
-                    fontFamily: "sans-serif",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.background = "#b8962e")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background = "#c9a84c")
-                  }
                 >
-                  Subscribe
-                </button>
-              </div>
-              <p
-                className="text-xs mt-3"
-                style={{
-                  color: "rgba(255,255,255,0.25)",
-                  fontFamily: "sans-serif",
-                }}
+                  Schedule coming soon.
+                </p>
+              )}
+
+              <Link
+                to="/mass-schedule"
+                className="inline-flex items-center gap-2 mt-5 text-xs font-bold tracking-widest uppercase group transition-all"
+                style={{ color: "#c9a84c", fontFamily: "sans-serif" }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "white")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "#c9a84c")}
               >
-                We respect your privacy. Unsubscribe at any time.
-              </p>
+                Full Schedule
+                <ArrowRight
+                  size={12}
+                  className="group-hover:translate-x-1 transition-transform"
+                />
+              </Link>
             </div>
           </div>
         </div>
 
-        {/* ── Divider ── */}
+        {/* Divider */}
         <div
           className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16"
           style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}
         />
 
-        {/* ── Bottom bar ── */}
+        {/* Bottom bar */}
         <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16 py-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <p
             className="text-xs text-center md:text-left"

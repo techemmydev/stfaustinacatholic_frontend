@@ -41,6 +41,7 @@ import { AdminTimeSlotsPage } from "./Adminpages/Admintimeslotspage";
 import { AdminMassManagement } from "./Adminpages/Adminmassmanagement";
 import { AdminContactPage } from "./Adminpages/Admincontactpage";
 import { AdminSermonsPage } from "./Adminpages/Adminsermonspage";
+// import { AdminGalleryPage } from "./Adminpages/Admingallerypage";
 
 function App() {
   const dispatch = useDispatch();
@@ -95,6 +96,7 @@ function App() {
           <Route path="mass-bookings" element={<AdminMassBooking />} />
           <Route path="contacts" element={<AdminContactPage />} />
           <Route path="sermons" element={<AdminSermonsPage />} />
+          {/* <Route path="gallery" element={<AdminGalleryPage />} /> */}
           <Route path="mass-management" element={<AdminMassManagement />} />
           <Route path="priests" element={<AdminPriestsPage />} />
           <Route path="mass-schedule" element={<AdminMassSchedulePage />} />

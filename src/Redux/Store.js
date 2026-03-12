@@ -16,6 +16,7 @@ import massReducer from "./slice/Massslice";
 import sermonReducer from "./slice/Sermonslice";
 import priestReducer from "./slice/Priestslice";
 import adminSettingsReducer from "./slice/Adminsettingsslice";
+import galleryReducer from "./slice/Galleryslice";
 export const store = configureStore({
   reducer: {
     parishRegister: parishRegisterReducer,
@@ -34,5 +35,6 @@ export const store = configureStore({
     sermon: sermonReducer,
     priest: priestReducer,
     adminSettings: adminSettingsReducer,
+    gallery: galleryReducer,
   },
 });

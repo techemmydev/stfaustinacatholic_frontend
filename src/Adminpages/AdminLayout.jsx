@@ -16,6 +16,7 @@ import {
   Mail,
   CheckCheck,
 } from "lucide-react";
+import { Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { logoutAdmin } from "../Redux/slice/adminSlice";
@@ -179,6 +180,7 @@ export function AdminLayout() {
     { name: "Events", path: "/admin/events", icon: Calendar },
     { name: "Invitations", path: "/admin/invitations", icon: Mail },
     { name: "Testimonials", path: "/admin/reviews", icon: MessageSquare },
+    // { name: "Gallery", path: "/admin/gallery", icon: ImageIcon },
     { name: "Parishioners", path: "/admin/parishioners", icon: Users },
     { name: "Admin Users", path: "/admin/users", icon: UserCog },
     { name: "Settings", path: "/admin/settings", icon: Settings },

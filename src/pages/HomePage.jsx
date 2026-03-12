@@ -107,8 +107,7 @@ const HomePage = () => {
   return (
     <>
       <Herosection />
-
-      <div style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}>
+      <div className="font-inter">
         {/* ── WELCOME BANNER ─────────────────────────────────────── */}
         <section
           style={{
@@ -146,7 +145,7 @@ const HomePage = () => {
         </section>
 
         {/* ── MISSION ────────────────────────────────────────────── */}
-        <section className="py-20" style={{ background: "#faf8f5" }}>
+        <section className="py-20 " style={{ background: "#faf8f5" }}>
           <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16">
             <div className="grid lg:grid-cols-2 gap-16 items-center">
               {/* Left: text */}
@@ -878,12 +877,11 @@ const HomePage = () => {
           </div>
         </section>
       </div>
-
       <Stats />
       <Testimonial />
       <FaithMediaSection />
       <MassBookingCTA />
-      <ParishGallery />
+      // <ParishGallery />
       <ParishPrayerCorner />
     </>
   );
