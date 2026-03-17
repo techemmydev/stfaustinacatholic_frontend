@@ -19,6 +19,7 @@ import PagenotFound from "./pages/PagenotFound";
 import { CookieBanner } from "./UiComponents/CookieBanner";
 import { useInactivity } from "./utils/useInactivity";
 import { LockScreen } from "./UiComponents/LockScreen";
+import { UserLockScreen } from "./UiComponents/UserLockScreen";
 import { useSelector, useDispatch } from "react-redux";
 
 // Import Admin Components
@@ -41,12 +42,15 @@ import { AdminTimeSlotsPage } from "./Adminpages/Admintimeslotspage";
 import { AdminMassManagement } from "./Adminpages/Adminmassmanagement";
 import { AdminContactPage } from "./Adminpages/Admincontactpage";
 import { AdminSermonsPage } from "./Adminpages/Adminsermonspage";
+import { AdminDonationsPage } from "./Adminpages/Admindonationspage";
 // import { AdminGalleryPage } from "./Adminpages/Admingallerypage";
 
 function App() {
   const dispatch = useDispatch();
   useInactivity(); // starts the inactivity timer
+  // const { isLocked } = useSelector((state) => state.lock);
   const { isLocked } = useSelector((state) => state.lock);
+  const { isAuthenticated } = useSelector((state) => state.admin);
 
   // Check if user is authenticated on app load
   useEffect(() => {
@@ -71,7 +75,14 @@ function App() {
 
   return (
     <>
-      {isLocked && <LockScreen />}
+      {
+        isLocked &&
+          (isAuthenticated ? (
+            <LockScreen /> // admin — requires password modal
+          ) : (
+            <UserLockScreen />
+          )) // public user — single tap
+      }
       <CookieBanner />
       {/* ✅ SONNER TOASTER ADDED HERE */}
       <Toaster position="top-right" richColors expand={true} closeButton />
@@ -96,6 +107,7 @@ function App() {
           <Route path="mass-bookings" element={<AdminMassBooking />} />
           <Route path="contacts" element={<AdminContactPage />} />
           <Route path="sermons" element={<AdminSermonsPage />} />
+          <Route path="donations" element={<AdminDonationsPage />} />
           {/* <Route path="gallery" element={<AdminGalleryPage />} /> */}
           <Route path="mass-management" element={<AdminMassManagement />} />
           <Route path="priests" element={<AdminPriestsPage />} />

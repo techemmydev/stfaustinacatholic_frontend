@@ -13,6 +13,7 @@ import {
   Bell,
   UserCog,
   MessageSquare,
+  DollarSign,
   Mail,
   CheckCheck,
 } from "lucide-react";
@@ -182,6 +183,7 @@ export function AdminLayout() {
     { name: "Testimonials", path: "/admin/reviews", icon: MessageSquare },
     // { name: "Gallery", path: "/admin/gallery", icon: ImageIcon },
     { name: "Parishioners", path: "/admin/parishioners", icon: Users },
+    { name: "Donations", path: "/admin/donations", icon: DollarSign },
     { name: "Admin Users", path: "/admin/users", icon: UserCog },
     { name: "Settings", path: "/admin/settings", icon: Settings },
   ];
