@@ -77,7 +77,9 @@ export const deleteParishioner = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       // ✅ Use ADMIN_API_URL for admin operations
-      await axios.delete(`${ADMIN_API_URL}/parishioners/${id}`);
+      await axios.delete(`${ADMIN_API_URL}/parishioners/${id}`, {
+        withCredentials: true,
+      });
       return id;
     } catch (error) {
       console.error("Delete Parishioner Error:", error);
@@ -92,7 +94,9 @@ export const deleteAllParishioners = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       // ✅ Use ADMIN_API_URL for admin operations
-      await axios.delete(`${ADMIN_API_URL}/parishioners`);
+      await axios.delete(`${ADMIN_API_URL}/parishioners`, {
+        withCredentials: true,
+      });
       return [];
     } catch (error) {
       console.error("Delete All Parishioners Error:", error);

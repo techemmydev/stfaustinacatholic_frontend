@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router";
 import { Home, Church } from "lucide-react";
-import logo from "../assets/images/stfaustinaimage.png";
+import logo from "../assets/images/sspeterandpaullogo.jpg";
 
 export default function PagenotFound() {
   return (
@@ -11,7 +11,7 @@ export default function PagenotFound() {
         <div className="flex justify-center mb-6">
           <img
             src={logo}
-            alt="St. Faustina Parish Catholic Church"
+            alt="St. Peterandpaul Parish Catholic Church"
             className="h-20 w-auto"
           />
         </div>
@@ -46,7 +46,7 @@ export default function PagenotFound() {
 
         {/* Footer Note */}
         <p className="text-sm text-gray-400 mt-8">
-          St. Faustina Parish Catholic Church
+          St. Peter and Paul Parish Catholic Church
         </p>
       </div>
     </div>

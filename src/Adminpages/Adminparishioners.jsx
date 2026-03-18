@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import axios from "axios";
 import {
   fetchParishioners,
   updateParishioner,
@@ -16,11 +17,7 @@ import {
   Edit,
   CreditCard,
   Download,
-  UserCheck,
-  User,
-  Mail,
-  Phone,
-  MapPin,
+  Printer,
 } from "lucide-react";
 import {
   Dialog,
@@ -30,12 +27,24 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+
+// ── Ensure admin cookies are sent on all axios requests ────────
+axios.defaults.withCredentials = true;
 
 export function AdminParishioners() {
   const dispatch = useDispatch();
 
-  // ✅ FIX: Get loading state properly from Redux
   const {
     parishioners = [],
     total = 0,
@@ -49,9 +58,17 @@ export function AdminParishioners() {
   const [currentPage, setCurrentPage] = useState(1);
   const limit = 10;
 
+  // ── Dialog states ──────────────────────────────────────────
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [idCardDialogOpen, setIdCardDialogOpen] = useState(false);
   const [selectedParishioner, setSelectedParishioner] = useState(null);
+
+  // ── Confirmation dialog states ─────────────────────────────
+  const [deleteOneOpen, setDeleteOneOpen] = useState(false);
+  const [deleteAllOpen, setDeleteAllOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
+
+  const idCardRef = useRef(null);
 
   const [editData, setEditData] = useState({
     fullName: "",
@@ -77,7 +94,6 @@ export function AdminParishioners() {
     ministries: [],
     accessibility: "",
     status: "Active",
-    registeredDate: new Date().toISOString(),
   });
 
   useEffect(() => {
@@ -86,16 +102,17 @@ export function AdminParishioners() {
     );
   }, [dispatch, searchQuery, currentPage, limit]);
 
+  // ── Edit ───────────────────────────────────────────────────
   const handleEdit = (parishioner) => {
     setSelectedParishioner(parishioner);
     setEditData({
-      fullName: parishioner.fullName,
-      email: parishioner.email,
+      fullName: parishioner.fullName || "",
+      email: parishioner.email || "",
       phone: parishioner.phone || "",
       address: parishioner.address || "",
       dob: parishioner.dob ? parishioner.dob.split("T")[0] : "",
-      gender: parishioner.gender,
-      maritalStatus: parishioner.maritalStatus,
+      gender: parishioner.gender || "Male",
+      maritalStatus: parishioner.maritalStatus || "Single",
       spouseName: parishioner.spouseName || "",
       sacraments: parishioner.sacraments || {
         baptized: false,
@@ -112,7 +129,6 @@ export function AdminParishioners() {
       ministries: parishioner.ministries || [],
       accessibility: parishioner.accessibility || "",
       status: parishioner.status || "Active",
-      registeredDate: parishioner.createdAt || new Date().toISOString(),
     });
     setEditDialogOpen(true);
   };
@@ -129,45 +145,168 @@ export function AdminParishioners() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this parishioner?")) {
-      try {
-        await dispatch(deleteParishioner(id)).unwrap();
-        toast.success("Parishioner deleted");
-      } catch {
-        toast.error("Failed to delete parishioner");
-      }
+  // ── Delete one ─────────────────────────────────────────────
+  const confirmDeleteOne = (id) => {
+    setPendingDeleteId(id);
+    setDeleteOneOpen(true);
+  };
+
+  const handleDeleteConfirmed = async () => {
+    try {
+      await dispatch(deleteParishioner(pendingDeleteId)).unwrap();
+      toast.success("Parishioner deleted");
+    } catch {
+      toast.error("Failed to delete parishioner");
+    } finally {
+      setDeleteOneOpen(false);
+      setPendingDeleteId(null);
     }
   };
 
-  const handleDeleteAll = async () => {
-    if (
-      window.confirm(
-        "Are you sure you want to delete ALL parishioners? This cannot be undone.",
-      )
-    ) {
-      try {
-        await dispatch(deleteAllParishioners()).unwrap();
-        toast.success("All parishioners deleted");
-      } catch {
-        toast.error("Failed to delete all parishioners");
-      }
+  // ── Delete all ─────────────────────────────────────────────
+  const handleDeleteAllConfirmed = async () => {
+    try {
+      await dispatch(deleteAllParishioners()).unwrap();
+      toast.success("All parishioners deleted");
+    } catch {
+      toast.error("Failed to delete all parishioners");
+    } finally {
+      setDeleteAllOpen(false);
     }
   };
 
+  // ── ID Card ────────────────────────────────────────────────
   const handleGenerateIDCard = (parishioner) => {
     setSelectedParishioner(parishioner);
     setIdCardDialogOpen(true);
   };
 
-  const handleDownloadIDCard = () => {
-    toast.success("ID Card downloaded successfully");
-    setIdCardDialogOpen(false);
+  // Opens a print window with just the ID card HTML
+  const handlePrintIDCard = () => {
+    if (!selectedParishioner) return;
+
+    const sacramentsList = [];
+    const s = selectedParishioner.sacraments || {};
+    if (s.baptized) sacramentsList.push("Baptism");
+    if (s.communion) sacramentsList.push("First Communion");
+    if (s.confirmed) sacramentsList.push("Confirmation");
+    if (s.married) sacramentsList.push("Marriage");
+
+    const memberSince = new Date(
+      selectedParishioner.createdAt || Date.now(),
+    ).toLocaleDateString("en-NG", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+
+    const printHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>ID Card – ${selectedParishioner.fullName}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap');
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { background: #f0f0f0; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: 'Inter', sans-serif; }
+            .card {
+              width: 85.6mm; height: 54mm;
+              background: linear-gradient(135deg, #1e3a5f 0%, #2d5286 50%, #8B2635 100%);
+              border-radius: 8px;
+              padding: 6mm 7mm;
+              color: white;
+              position: relative;
+              overflow: hidden;
+              display: flex;
+              flex-direction: column;
+              justify-content: space-between;
+              box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            }
+            .card::before {
+              content: '';
+              position: absolute;
+              top: -20px; right: -20px;
+              width: 60mm; height: 60mm;
+              border-radius: 50%;
+              background: rgba(255,255,255,0.05);
+            }
+            .card::after {
+              content: '';
+              position: absolute;
+              bottom: -15px; left: -15px;
+              width: 40mm; height: 40mm;
+              border-radius: 50%;
+              background: rgba(255,255,255,0.04);
+            }
+            .header { display: flex; align-items: center; gap: 3mm; }
+            .cross {
+              width: 8mm; height: 8mm; flex-shrink: 0;
+              display: flex; align-items: center; justify-content: center;
+              color: #c9a84c; font-size: 18px; font-weight: bold;
+            }
+            .parish-name { font-family: 'Playfair Display', serif; font-size: 7.5pt; line-height: 1.2; color: rgba(255,255,255,0.9); }
+            .divider { height: 0.3mm; background: rgba(201,168,76,0.5); margin: 2mm 0; }
+            .body { display: flex; gap: 3mm; align-items: center; flex: 1; }
+            .avatar {
+              width: 14mm; height: 14mm; border-radius: 50%;
+              background: rgba(201,168,76,0.25);
+              border: 0.5mm solid rgba(201,168,76,0.6);
+              display: flex; align-items: center; justify-content: center;
+              font-family: 'Playfair Display', serif;
+              font-size: 16pt; color: #c9a84c; flex-shrink: 0;
+            }
+            .info { flex: 1; }
+            .name { font-family: 'Playfair Display', serif; font-size: 10pt; font-weight: 700; line-height: 1.2; margin-bottom: 1mm; }
+            .detail { font-size: 6.5pt; color: rgba(255,255,255,0.75); line-height: 1.5; }
+            .footer { display: flex; justify-content: space-between; align-items: flex-end; }
+            .id-num { font-size: 5.5pt; color: rgba(255,255,255,0.5); font-family: monospace; }
+            .sacraments { font-size: 5.5pt; color: rgba(201,168,76,0.8); text-align: right; }
+            .status-badge {
+              display: inline-block; padding: 0.5mm 2mm;
+              background: rgba(201,168,76,0.2); border: 0.3mm solid rgba(201,168,76,0.5);
+              border-radius: 2mm; font-size: 5.5pt; color: #c9a84c; margin-top: 1mm;
+            }
+            @media print {
+              body { background: white; }
+              .card { box-shadow: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <div class="header">
+              <div class="cross">✝</div>
+              <div class="parish-name">St. Faustina Catholic Parish<br/>Parishioner Identity Card</div>
+            </div>
+            <div class="divider"></div>
+            <div class="body">
+              <div class="avatar">${selectedParishioner.fullName.charAt(0).toUpperCase()}</div>
+              <div class="info">
+                <div class="name">${selectedParishioner.fullName}</div>
+                <div class="detail">${selectedParishioner.email}</div>
+                ${selectedParishioner.phone ? `<div class="detail">${selectedParishioner.phone}</div>` : ""}
+                <div class="detail">Member since ${memberSince}</div>
+                <span class="status-badge">${selectedParishioner.status || "Active"}</span>
+              </div>
+            </div>
+            <div class="footer">
+              <div class="id-num">ID: ${selectedParishioner._id}</div>
+              ${sacramentsList.length > 0 ? `<div class="sacraments">${sacramentsList.join(" · ")}</div>` : ""}
+            </div>
+          </div>
+          <script>window.onload = () => { window.print(); }<\/script>
+        </body>
+      </html>
+    `;
+
+    const win = window.open("", "_blank", "width=500,height=400");
+    win.document.write(printHtml);
+    win.document.close();
   };
 
   const totalPages = Math.ceil(total / limit);
 
-  // ✅ FIX: Consistent loading UI matching AdminUsersPage
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -191,7 +330,7 @@ export function AdminParishioners() {
             Manage all registered parishioners
           </p>
         </div>
-        <Button onClick={handleDeleteAll} variant="destructive">
+        <Button onClick={() => setDeleteAllOpen(true)} variant="destructive">
           <Trash2 className="w-4 h-4 mr-2" />
           Delete All
         </Button>
@@ -205,14 +344,17 @@ export function AdminParishioners() {
             <Input
               placeholder="Search by name, email, or phone..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
               className="pl-10 h-11"
             />
           </div>
         </CardContent>
       </Card>
 
-      {/* Parishioners Table */}
+      {/* Table */}
       <Card className="border-0 shadow-md">
         <CardHeader className="border-b bg-gray-50">
           <CardTitle
@@ -269,7 +411,9 @@ export function AdminParishioners() {
                             <div className="text-sm font-medium text-gray-900">
                               {p.fullName}
                             </div>
-                            <div className="text-xs text-gray-500">{p._id}</div>
+                            <div className="text-xs text-gray-400 font-mono">
+                              {p._id.slice(-8)}
+                            </div>
                           </div>
                         </div>
                       </td>
@@ -296,7 +440,7 @@ export function AdminParishioners() {
                             size="sm"
                             variant="outline"
                             onClick={() => handleGenerateIDCard(p)}
-                            title="Generate ID Card"
+                            title="View ID Card"
                           >
                             <CreditCard className="w-4 h-4" />
                           </Button>
@@ -304,15 +448,15 @@ export function AdminParishioners() {
                             size="sm"
                             variant="outline"
                             onClick={() => handleEdit(p)}
-                            title="Edit Parishioner"
+                            title="Edit"
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
                           <Button
                             size="sm"
                             variant="destructive"
-                            onClick={() => handleDelete(p._id)}
-                            title="Delete Parishioner"
+                            onClick={() => confirmDeleteOne(p._id)}
+                            title="Delete"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -331,7 +475,7 @@ export function AdminParishioners() {
       {totalPages > 1 && (
         <div className="flex justify-center gap-2 mt-4">
           <Button
-            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
             variant="outline"
             size="sm"
@@ -352,9 +496,7 @@ export function AdminParishioners() {
             </Button>
           ))}
           <Button
-            onClick={() =>
-              setCurrentPage((prev) => Math.min(totalPages, prev + 1))
-            }
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
             variant="outline"
             size="sm"
@@ -364,7 +506,52 @@ export function AdminParishioners() {
         </div>
       )}
 
-      {/* Edit Dialog */}
+      {/* ── Delete One – AlertDialog ───────────────────────── */}
+      <AlertDialog open={deleteOneOpen} onOpenChange={setDeleteOneOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Parishioner</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this parishioner? This action
+              cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirmed}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ── Delete All – AlertDialog ───────────────────────── */}
+      <AlertDialog open={deleteAllOpen} onOpenChange={setDeleteAllOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete All Parishioners</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove <strong>every</strong> parishioner
+              record from the database. This action{" "}
+              <strong>cannot be undone</strong>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAllConfirmed}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Yes, delete all
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ── Edit Dialog ────────────────────────────────────── */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
@@ -375,93 +562,62 @@ export function AdminParishioners() {
               Edit Parishioner
             </DialogTitle>
             <DialogDescription>
-              Update all parishioner information
+              Update parishioner information
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            <div>
-              <label className="text-sm font-medium">Full Name *</label>
-              <Input
-                value={editData.fullName}
-                onChange={(e) =>
-                  setEditData({ ...editData, fullName: e.target.value })
-                }
-              />
-            </div>
+            {[
+              { label: "Full Name *", key: "fullName", type: "text" },
+              { label: "Email *", key: "email", type: "email" },
+              { label: "Phone", key: "phone", type: "tel" },
+              { label: "Address", key: "address", type: "text" },
+              { label: "Date of Birth", key: "dob", type: "date" },
+            ].map(({ label, key, type }) => (
+              <div key={key}>
+                <label className="text-sm font-medium">{label}</label>
+                <Input
+                  type={type}
+                  value={editData[key]}
+                  onChange={(e) =>
+                    setEditData({ ...editData, [key]: e.target.value })
+                  }
+                />
+              </div>
+            ))}
 
-            <div>
-              <label className="text-sm font-medium">Email *</label>
-              <Input
-                type="email"
-                value={editData.email}
-                onChange={(e) =>
-                  setEditData({ ...editData, email: e.target.value })
-                }
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">Phone</label>
-              <Input
-                value={editData.phone}
-                onChange={(e) =>
-                  setEditData({ ...editData, phone: e.target.value })
-                }
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">Address</label>
-              <Input
-                value={editData.address}
-                onChange={(e) =>
-                  setEditData({ ...editData, address: e.target.value })
-                }
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">Date of Birth</label>
-              <Input
-                type="date"
-                value={editData.dob}
-                onChange={(e) =>
-                  setEditData({ ...editData, dob: e.target.value })
-                }
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">Gender</label>
-              <select
-                className="w-full rounded-md border border-gray-300 px-3 py-2"
-                value={editData.gender}
-                onChange={(e) =>
-                  setEditData({ ...editData, gender: e.target.value })
-                }
-              >
-                <option>Male</option>
-                <option>Female</option>
-                <option>Other</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">Marital Status</label>
-              <select
-                className="w-full rounded-md border border-gray-300 px-3 py-2"
-                value={editData.maritalStatus}
-                onChange={(e) =>
-                  setEditData({ ...editData, maritalStatus: e.target.value })
-                }
-              >
-                <option>Single</option>
-                <option>Married</option>
-                <option>Widowed</option>
-                <option>Divorced</option>
-              </select>
-            </div>
+            {[
+              {
+                label: "Gender",
+                key: "gender",
+                options: ["Male", "Female", "Other"],
+              },
+              {
+                label: "Marital Status",
+                key: "maritalStatus",
+                options: ["Single", "Married", "Widowed", "Divorced"],
+              },
+              {
+                label: "Status",
+                key: "status",
+                options: ["Active", "Inactive"],
+              },
+            ].map(({ label, key, options }) => (
+              <div key={key}>
+                <label className="text-sm font-medium">{label}</label>
+                <select
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  value={editData[key]}
+                  onChange={(e) =>
+                    setEditData({ ...editData, [key]: e.target.value })
+                  }
+                >
+                  {options.map((o) => (
+                    <option key={o}>{o}</option>
+                  ))}
+                </select>
+              </div>
+            ))}
 
             {editData.maritalStatus === "Married" && (
               <div>
@@ -475,183 +631,88 @@ export function AdminParishioners() {
               </div>
             )}
 
-            {/* Sacraments Section */}
+            {/* Sacraments */}
             <div className="border-t pt-4">
-              <h4 className="font-semibold mb-3">Sacraments</h4>
-
-              {/* Baptized */}
-              <div className="space-y-2 mb-3">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={editData.sacraments.baptized}
-                    onChange={(e) =>
-                      setEditData({
-                        ...editData,
-                        sacraments: {
-                          ...editData.sacraments,
-                          baptized: e.target.checked,
-                        },
-                      })
-                    }
-                  />
-                  <span className="font-medium">Baptized</span>
-                </label>
-
-                {editData.sacraments.baptized && (
-                  <>
-                    <Input
-                      type="date"
-                      placeholder="Baptism Date"
-                      value={
-                        editData.sacraments.baptismDate?.split("T")[0] || ""
-                      }
+              <h4 className="font-semibold mb-3 text-[#1e3a5f]">Sacraments</h4>
+              {[
+                {
+                  key: "baptized",
+                  label: "Baptized",
+                  dateKey: "baptismDate",
+                  extraKey: "baptismParish",
+                  extraLabel: "Baptism Parish",
+                },
+                {
+                  key: "communion",
+                  label: "First Communion",
+                  dateKey: "communionDate",
+                },
+                {
+                  key: "confirmed",
+                  label: "Confirmed",
+                  dateKey: "confirmationDate",
+                },
+                {
+                  key: "married",
+                  label: "Married (Catholic Church)",
+                  dateKey: "marriageDate",
+                },
+              ].map(({ key, label, dateKey, extraKey, extraLabel }) => (
+                <div key={key} className="space-y-2 mb-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={editData.sacraments[key]}
                       onChange={(e) =>
                         setEditData({
                           ...editData,
                           sacraments: {
                             ...editData.sacraments,
-                            baptismDate: e.target.value,
+                            [key]: e.target.checked,
                           },
                         })
                       }
                     />
-                    <Input
-                      placeholder="Baptism Parish"
-                      value={editData.sacraments.baptismParish || ""}
-                      onChange={(e) =>
-                        setEditData({
-                          ...editData,
-                          sacraments: {
-                            ...editData.sacraments,
-                            baptismParish: e.target.value,
-                          },
-                        })
-                      }
-                    />
-                  </>
-                )}
-              </div>
-
-              {/* Communion */}
-              <div className="space-y-2 mb-3">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={editData.sacraments.communion}
-                    onChange={(e) =>
-                      setEditData({
-                        ...editData,
-                        sacraments: {
-                          ...editData.sacraments,
-                          communion: e.target.checked,
-                        },
-                      })
-                    }
-                  />
-                  <span className="font-medium">First Communion</span>
-                </label>
-
-                {editData.sacraments.communion && (
-                  <Input
-                    type="date"
-                    placeholder="Communion Date"
-                    value={
-                      editData.sacraments.communionDate?.split("T")[0] || ""
-                    }
-                    onChange={(e) =>
-                      setEditData({
-                        ...editData,
-                        sacraments: {
-                          ...editData.sacraments,
-                          communionDate: e.target.value,
-                        },
-                      })
-                    }
-                  />
-                )}
-              </div>
-
-              {/* Confirmed */}
-              <div className="space-y-2 mb-3">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={editData.sacraments.confirmed}
-                    onChange={(e) =>
-                      setEditData({
-                        ...editData,
-                        sacraments: {
-                          ...editData.sacraments,
-                          confirmed: e.target.checked,
-                        },
-                      })
-                    }
-                  />
-                  <span className="font-medium">Confirmed</span>
-                </label>
-
-                {editData.sacraments.confirmed && (
-                  <Input
-                    type="date"
-                    placeholder="Confirmation Date"
-                    value={
-                      editData.sacraments.confirmationDate?.split("T")[0] || ""
-                    }
-                    onChange={(e) =>
-                      setEditData({
-                        ...editData,
-                        sacraments: {
-                          ...editData.sacraments,
-                          confirmationDate: e.target.value,
-                        },
-                      })
-                    }
-                  />
-                )}
-              </div>
-
-              {/* Married */}
-              <div className="space-y-2 mb-3">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={editData.sacraments.married}
-                    onChange={(e) =>
-                      setEditData({
-                        ...editData,
-                        sacraments: {
-                          ...editData.sacraments,
-                          married: e.target.checked,
-                        },
-                      })
-                    }
-                  />
-                  <span className="font-medium">Married (Catholic Church)</span>
-                </label>
-
-                {editData.sacraments.married && (
-                  <Input
-                    type="date"
-                    placeholder="Marriage Date"
-                    value={
-                      editData.sacraments.marriageDate?.split("T")[0] || ""
-                    }
-                    onChange={(e) =>
-                      setEditData({
-                        ...editData,
-                        sacraments: {
-                          ...editData.sacraments,
-                          marriageDate: e.target.value,
-                        },
-                      })
-                    }
-                  />
-                )}
-              </div>
+                    <span className="font-medium text-sm">{label}</span>
+                  </label>
+                  {editData.sacraments[key] && (
+                    <>
+                      <Input
+                        type="date"
+                        value={
+                          editData.sacraments[dateKey]?.split("T")[0] || ""
+                        }
+                        onChange={(e) =>
+                          setEditData({
+                            ...editData,
+                            sacraments: {
+                              ...editData.sacraments,
+                              [dateKey]: e.target.value,
+                            },
+                          })
+                        }
+                      />
+                      {extraKey && (
+                        <Input
+                          placeholder={extraLabel}
+                          value={editData.sacraments[extraKey] || ""}
+                          onChange={(e) =>
+                            setEditData({
+                              ...editData,
+                              sacraments: {
+                                ...editData.sacraments,
+                                [extraKey]: e.target.value,
+                              },
+                            })
+                          }
+                        />
+                      )}
+                    </>
+                  )}
+                </div>
+              ))}
             </div>
 
-            {/* Parish life */}
             <div>
               <label className="text-sm font-medium">Previous Parish</label>
               <Input
@@ -661,7 +722,6 @@ export function AdminParishioners() {
                 }
               />
             </div>
-
             <div>
               <label className="text-sm font-medium">Accessibility Needs</label>
               <Input
@@ -671,7 +731,6 @@ export function AdminParishioners() {
                 }
               />
             </div>
-
             <div>
               <label className="text-sm font-medium">
                 Ministries (comma separated)
@@ -689,20 +748,6 @@ export function AdminParishioners() {
                 }
               />
             </div>
-
-            <div>
-              <label className="text-sm font-medium">Status</label>
-              <select
-                className="w-full rounded-md border border-gray-300 px-3 py-2"
-                value={editData.status}
-                onChange={(e) =>
-                  setEditData({ ...editData, status: e.target.value })
-                }
-              >
-                <option>Active</option>
-                <option>Inactive</option>
-              </select>
-            </div>
           </div>
 
           <DialogFooter>
@@ -719,9 +764,9 @@ export function AdminParishioners() {
         </DialogContent>
       </Dialog>
 
-      {/* ID Card Dialog */}
+      {/* ── ID Card Dialog ─────────────────────────────────── */}
       <Dialog open={idCardDialogOpen} onOpenChange={setIdCardDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle
               className="text-2xl text-[#1e3a5f]"
@@ -729,55 +774,119 @@ export function AdminParishioners() {
             >
               Parishioner ID Card
             </DialogTitle>
-            <DialogDescription>Preview and download ID card</DialogDescription>
+            <DialogDescription>
+              Preview and print the identity card
+            </DialogDescription>
           </DialogHeader>
 
           {selectedParishioner && (
-            <div className="p-6 bg-gradient-to-br from-[#1e3a5f] to-[#8B2635] text-white rounded-lg shadow-lg">
-              <div className="text-center mb-4">
-                <h3 className="text-2xl font-bold mb-2">
-                  {selectedParishioner.fullName}
-                </h3>
-                <p className="text-sm opacity-90">Parishioner ID Card</p>
-              </div>
-
-              <div className="space-y-2 text-sm">
-                <p>
-                  <span className="font-semibold">ID:</span>{" "}
-                  {selectedParishioner._id}
-                </p>
-                <p>
-                  <span className="font-semibold">Status:</span>{" "}
-                  {selectedParishioner.status || "Active"}
-                </p>
-                <p>
-                  <span className="font-semibold">Member Since:</span>{" "}
-                  {new Date(
-                    selectedParishioner.createdAt || Date.now(),
-                  ).toLocaleDateString()}
-                </p>
-                <p>
-                  <span className="font-semibold">Email:</span>{" "}
-                  {selectedParishioner.email}
-                </p>
-                {selectedParishioner.phone && (
-                  <p>
-                    <span className="font-semibold">Phone:</span>{" "}
-                    {selectedParishioner.phone}
-                  </p>
-                )}
-                {selectedParishioner.ministries &&
-                  selectedParishioner.ministries.length > 0 && (
-                    <p>
-                      <span className="font-semibold">Ministries:</span>{" "}
-                      {selectedParishioner.ministries.join(", ")}
+            <>
+              {/* Card Preview */}
+              <div
+                ref={idCardRef}
+                className="rounded-xl overflow-hidden shadow-lg"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #1e3a5f 0%, #2d5286 50%, #8B2635 100%)",
+                  color: "white",
+                  padding: "20px",
+                  fontFamily: "sans-serif",
+                }}
+              >
+                {/* Card header */}
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-2xl text-[#c9a84c]">✝</span>
+                  <div>
+                    <p
+                      className="text-xs font-semibold opacity-90"
+                      style={{ fontFamily: "Playfair Display, serif" }}
+                    >
+                      St. Peterandpaul Catholic Parish
                     </p>
-                  )}
+                    <p className="text-[10px] opacity-60">
+                      Parishioner Identity Card
+                    </p>
+                  </div>
+                </div>
+
+                <div className="h-px bg-[#c9a84c] opacity-40 mb-3" />
+
+                {/* Body */}
+                <div className="flex items-center gap-4">
+                  <div
+                    className="w-14 h-14 rounded-full flex items-center justify-center text-2xl flex-shrink-0"
+                    style={{
+                      background: "rgba(201,168,76,0.2)",
+                      border: "2px solid rgba(201,168,76,0.5)",
+                      fontFamily: "Playfair Display, serif",
+                      color: "#c9a84c",
+                    }}
+                  >
+                    {selectedParishioner.fullName.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1">
+                    <p
+                      className="font-bold text-base leading-tight"
+                      style={{ fontFamily: "Playfair Display, serif" }}
+                    >
+                      {selectedParishioner.fullName}
+                    </p>
+                    <p className="text-xs opacity-70 mt-0.5">
+                      {selectedParishioner.email}
+                    </p>
+                    {selectedParishioner.phone && (
+                      <p className="text-xs opacity-70">
+                        {selectedParishioner.phone}
+                      </p>
+                    )}
+                    <p className="text-xs opacity-60 mt-0.5">
+                      Member since{" "}
+                      {new Date(
+                        selectedParishioner.createdAt || Date.now(),
+                      ).toLocaleDateString("en-NG", {
+                        month: "long",
+                        year: "numeric",
+                      })}
+                    </p>
+                    <span
+                      className="inline-block text-[10px] px-2 py-0.5 rounded-full mt-1"
+                      style={{
+                        background: "rgba(201,168,76,0.2)",
+                        border: "1px solid rgba(201,168,76,0.4)",
+                        color: "#c9a84c",
+                      }}
+                    >
+                      {selectedParishioner.status || "Active"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Sacraments */}
+                {(() => {
+                  const s = selectedParishioner.sacraments || {};
+                  const list = [];
+                  if (s.baptized) list.push("Baptism");
+                  if (s.communion) list.push("Communion");
+                  if (s.confirmed) list.push("Confirmation");
+                  if (s.married) list.push("Marriage");
+                  return list.length > 0 ? (
+                    <p className="text-[10px] opacity-50 mt-3 text-right">
+                      {list.join(" · ")}
+                    </p>
+                  ) : null;
+                })()}
+
+                {/* Footer */}
+                <div className="mt-2">
+                  <p className="text-[9px] opacity-30 font-mono">
+                    ID: {selectedParishioner._id}
+                  </p>
+                </div>
               </div>
-            </div>
+            </>
           )}
 
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             <Button
               variant="outline"
               onClick={() => setIdCardDialogOpen(false)}
@@ -785,11 +894,11 @@ export function AdminParishioners() {
               Close
             </Button>
             <Button
-              onClick={handleDownloadIDCard}
+              onClick={handlePrintIDCard}
               className="bg-[#8B2635] hover:bg-[#6d1d28] text-white"
             >
-              <Download className="w-4 h-4 mr-2" />
-              Download ID Card
+              <Printer className="w-4 h-4 mr-2" />
+              Print / Save as PDF
             </Button>
           </DialogFooter>
         </DialogContent>

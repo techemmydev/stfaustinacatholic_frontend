@@ -118,24 +118,22 @@ const HomePage = () => {
         >
           <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16 flex flex-col md:flex-row items-center justify-between gap-4">
             <p
-              className="text-white/80 text-sm tracking-widest uppercase text-center md:text-left"
-              style={{ fontFamily: "sans-serif", letterSpacing: "0.25em" }}
+              className="text-white/80 text-sm tracking-widest uppercase text-center md:text-left font-inter"
+              style={{ letterSpacing: "0.25em" }}
             >
               Established in Faith · Growing in Grace
             </p>
             <div className="flex items-center gap-6">
               <a
                 href="tel:+1234567890"
-                className="flex items-center gap-2 text-white/60 hover:text-[#c9a84c] transition-colors text-sm"
-                style={{ fontFamily: "sans-serif" }}
+                className="flex items-center gap-2 text-white/60 hover:text-[#c9a84c] transition-colors text-sm font-inter"
               >
                 <Phone size={14} />
                 <span>+1 (234) 567-890</span>
               </a>
               <a
                 href="mailto:info@sspeterandpaul.org"
-                className="flex items-center gap-2 text-white/60 hover:text-[#c9a84c] transition-colors text-sm"
-                style={{ fontFamily: "sans-serif" }}
+                className="flex items-center gap-2 text-white/60 hover:text-[#c9a84c] transition-colors text-sm font-inter"
               >
                 <Mail size={14} />
                 <span>info@sspeterandpaul.org</span>
@@ -173,10 +171,9 @@ const HomePage = () => {
                   }}
                 />
                 <p
-                  className="text-lg leading-relaxed mb-6"
+                  className="text-lg leading-relaxed mb-6 font-inter"
                   style={{
                     color: "#555",
-                    fontFamily: "sans-serif",
                     fontWeight: 300,
                   }}
                 >
@@ -186,10 +183,10 @@ const HomePage = () => {
                   where all can encounter Christ and grow in faith together.
                 </p>
                 <p
-                  className="text-base leading-relaxed mb-10"
+                  className="text-base leading-relaxed mb-10 font-inter"
                   style={{
                     color: "#777",
-                    fontFamily: "sans-serif",
+                    // fontFamily: "sans-serif",
                     fontWeight: 300,
                   }}
                 >
@@ -233,10 +230,10 @@ const HomePage = () => {
                       {p.title}
                     </h4>
                     <p
-                      className="text-sm leading-relaxed"
+                      className="text-sm leading-relaxed font-inter"
                       style={{
                         color: "#888",
-                        fontFamily: "sans-serif",
+                        // fontFamily: "sans-serif",
                         fontWeight: 300,
                       }}
                     >
@@ -324,18 +321,18 @@ const HomePage = () => {
                       {link.title}
                     </h3>
                     <p
-                      className="text-sm leading-relaxed mb-5"
+                      className="text-sm leading-relaxed mb-5 font-inter"
                       style={{
                         color: "#888",
-                        fontFamily: "sans-serif",
+                        // fontFamily: "sans-serif",
                         fontWeight: 300,
                       }}
                     >
                       {link.description}
                     </p>
                     <span
-                      className="inline-flex items-center gap-1 text-xs font-semibold tracking-widest uppercase group-hover:gap-2 transition-all"
-                      style={{ color: link.accent, fontFamily: "sans-serif" }}
+                      className="inline-flex items-center gap-1 text-xs font-semibold tracking-widest uppercase group-hover:gap-2 transition-all font-inter"
+                      style={{ color: link.accent }}
                     >
                       Learn More
                       <ChevronRight size={14} />
@@ -354,8 +351,8 @@ const HomePage = () => {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-12">
               <div>
                 <p
-                  className="text-xs tracking-[0.3em] uppercase mb-3"
-                  style={{ color: "#c9a84c", fontFamily: "sans-serif" }}
+                  className="text-xs tracking-[0.3em] uppercase mb-3 font-inter"
+                  style={{ color: "#c9a84c" }}
                 >
                   Liturgical Schedule
                 </p>
@@ -881,7 +878,7 @@ const HomePage = () => {
       <Testimonial />
       <FaithMediaSection />
       <MassBookingCTA />
-      // <ParishGallery />
+      <ParishGallery />
       <ParishPrayerCorner />
     </>
   );

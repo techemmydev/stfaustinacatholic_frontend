@@ -87,10 +87,7 @@ export default function MassBookingCTA() {
                   color: "rgba(255,255,255,0.45)",
                   fontFamily: "sans-serif",
                 }}
-              >
-                * Login is required to submit a Mass or Thanksgiving request.
-                Each Mass is limited to ensure proper reverence and care.
-              </p>
+              ></p>
 
               <Link
                 to="/mass-booking"

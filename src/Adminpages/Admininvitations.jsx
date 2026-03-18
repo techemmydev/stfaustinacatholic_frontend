@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Search, Check, X, Eye, Trash2, Mail, User, Clock } from "lucide-react";
+import { Search, Check, X, Eye, Trash2, Mail, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import {
@@ -33,7 +43,10 @@ export function AdminInvitations() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
 
-  // Fetch all invitations on mount
+  // ── Delete confirmation state ──────────────────────────────
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [invitationToDelete, setInvitationToDelete] = useState(null);
+
   useEffect(() => {
     dispatch(fetchAllInvitationsAdmin());
   }, [dispatch]);
@@ -65,45 +78,35 @@ export function AdminInvitations() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (
-      window.confirm(
-        "Are you sure you want to delete this invitation permanently?",
-      )
-    ) {
-      const result = await dispatch(deleteInvitation(id));
-      if (result.error) {
-        toast.error(result.payload || "Failed to delete invitation");
-      } else {
-        toast.success("Invitation deleted successfully");
-        setDialogOpen(false);
-      }
+  // ── Open delete confirmation ───────────────────────────────
+  const confirmDelete = (invitation) => {
+    setInvitationToDelete(invitation);
+    setDeleteDialogOpen(true);
+    setDialogOpen(false);
+  };
+
+  const handleDeleteConfirmed = async () => {
+    const result = await dispatch(deleteInvitation(invitationToDelete._id));
+    if (result.error) {
+      toast.error(result.payload || "Failed to delete invitation");
+    } else {
+      toast.success("Invitation deleted successfully");
     }
+    setDeleteDialogOpen(false);
+    setInvitationToDelete(null);
   };
 
   const getStatusBadge = (status) => {
-    switch (status) {
-      case "pending":
-        return (
-          <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100">
-            Pending
-          </Badge>
-        );
-      case "accepted":
-        return (
-          <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
-            Accepted
-          </Badge>
-        );
-      case "rejected":
-        return (
-          <Badge className="bg-red-100 text-red-700 hover:bg-red-100">
-            Rejected
-          </Badge>
-        );
-      default:
-        return <Badge>{status}</Badge>;
-    }
+    const map = {
+      pending: "bg-orange-100 text-orange-700 hover:bg-orange-100",
+      accepted: "bg-green-100 text-green-700 hover:bg-green-100",
+      rejected: "bg-red-100 text-red-700 hover:bg-red-100",
+    };
+    return (
+      <Badge className={map[status] || "bg-gray-100 text-gray-700"}>
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </Badge>
+    );
   };
 
   const filteredInvitations = adminInvitations.filter((invitation) => {
@@ -112,9 +115,7 @@ export function AdminInvitations() {
       invitation.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (invitation.message &&
         invitation.message.toLowerCase().includes(searchQuery.toLowerCase()));
-
     const matchesTab = activeTab === "all" || invitation.status === activeTab;
-
     return matchesSearch && matchesTab;
   });
 
@@ -127,7 +128,6 @@ export function AdminInvitations() {
       .length,
   };
 
-  // Show loading spinner
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -151,83 +151,59 @@ export function AdminInvitations() {
         </p>
       </div>
 
-      {/* Statistics Cards */}
+      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border-0 shadow-md">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Total Invitations</p>
-                <h3
-                  className="text-3xl text-[#1e3a5f]"
-                  style={{ fontFamily: "Playfair Display, serif" }}
+        {[
+          {
+            label: "Total Invitations",
+            value: invitationCounts.all,
+            icon: Mail,
+            bg: "bg-blue-50",
+            color: "text-blue-600",
+          },
+          {
+            label: "Pending",
+            value: invitationCounts.pending,
+            icon: Clock,
+            bg: "bg-orange-50",
+            color: "text-orange-600",
+          },
+          {
+            label: "Accepted",
+            value: invitationCounts.accepted,
+            icon: Check,
+            bg: "bg-green-50",
+            color: "text-green-600",
+          },
+          {
+            label: "Rejected",
+            value: invitationCounts.rejected,
+            icon: X,
+            bg: "bg-red-50",
+            color: "text-red-600",
+          },
+        ].map(({ label, value, icon: Icon, bg, color }) => (
+          <Card key={label} className="border-0 shadow-md">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">{label}</p>
+                  <h3
+                    className="text-3xl text-[#1e3a5f]"
+                    style={{ fontFamily: "Playfair Display, serif" }}
+                  >
+                    {value}
+                  </h3>
+                </div>
+                <div
+                  className={`w-12 h-12 ${bg} rounded-lg flex items-center justify-center`}
                 >
-                  {invitationCounts.all}
-                </h3>
+                  <Icon className={`w-6 h-6 ${color}`} />
+                </div>
               </div>
-              <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
-                <Mail className="w-6 h-6 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-0 shadow-md">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Pending</p>
-                <h3
-                  className="text-3xl text-[#1e3a5f]"
-                  style={{ fontFamily: "Playfair Display, serif" }}
-                >
-                  {invitationCounts.pending}
-                </h3>
-              </div>
-              <div className="w-12 h-12 bg-orange-50 rounded-lg flex items-center justify-center">
-                <Clock className="w-6 h-6 text-orange-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-0 shadow-md">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Accepted</p>
-                <h3
-                  className="text-3xl text-[#1e3a5f]"
-                  style={{ fontFamily: "Playfair Display, serif" }}
-                >
-                  {invitationCounts.accepted}
-                </h3>
-              </div>
-              <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
-                <Check className="w-6 h-6 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-0 shadow-md">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Rejected</p>
-                <h3
-                  className="text-3xl text-[#1e3a5f]"
-                  style={{ fontFamily: "Playfair Display, serif" }}
-                >
-                  {invitationCounts.rejected}
-                </h3>
-              </div>
-              <div className="w-12 h-12 bg-red-50 rounded-lg flex items-center justify-center">
-                <X className="w-6 h-6 text-red-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Search */}
@@ -245,37 +221,43 @@ export function AdminInvitations() {
         </CardContent>
       </Card>
 
-      {/* Tabs for Status Filtering */}
+      {/* Tabs */}
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
         className="space-y-6"
       >
         <TabsList className="bg-white border shadow-sm p-1">
-          <TabsTrigger
-            value="all"
-            className="data-[state=active]:bg-[#8B2635] data-[state=active]:text-white"
-          >
-            All ({invitationCounts.all})
-          </TabsTrigger>
-          <TabsTrigger
-            value="pending"
-            className="data-[state=active]:bg-orange-600 data-[state=active]:text-white"
-          >
-            Pending ({invitationCounts.pending})
-          </TabsTrigger>
-          <TabsTrigger
-            value="accepted"
-            className="data-[state=active]:bg-green-600 data-[state=active]:text-white"
-          >
-            Accepted ({invitationCounts.accepted})
-          </TabsTrigger>
-          <TabsTrigger
-            value="rejected"
-            className="data-[state=active]:bg-red-600 data-[state=active]:text-white"
-          >
-            Rejected ({invitationCounts.rejected})
-          </TabsTrigger>
+          {[
+            {
+              value: "all",
+              label: `All (${invitationCounts.all})`,
+              active:
+                "data-[state=active]:bg-[#8B2635] data-[state=active]:text-white",
+            },
+            {
+              value: "pending",
+              label: `Pending (${invitationCounts.pending})`,
+              active:
+                "data-[state=active]:bg-orange-600 data-[state=active]:text-white",
+            },
+            {
+              value: "accepted",
+              label: `Accepted (${invitationCounts.accepted})`,
+              active:
+                "data-[state=active]:bg-green-600 data-[state=active]:text-white",
+            },
+            {
+              value: "rejected",
+              label: `Rejected (${invitationCounts.rejected})`,
+              active:
+                "data-[state=active]:bg-red-600 data-[state=active]:text-white",
+            },
+          ].map(({ value, label, active }) => (
+            <TabsTrigger key={value} value={value} className={active}>
+              {label}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
         <TabsContent value={activeTab} className="space-y-4">
@@ -309,24 +291,21 @@ export function AdminInvitations() {
                   <table className="w-full">
                     <thead className="bg-gray-50 border-b">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">
-                          Requester
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">
-                          Email
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">
-                          Message Preview
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">
-                          Date
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">
-                          Actions
-                        </th>
+                        {[
+                          "Requester",
+                          "Email",
+                          "Message Preview",
+                          "Status",
+                          "Date",
+                          "Actions",
+                        ].map((h) => (
+                          <th
+                            key={h}
+                            className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider"
+                          >
+                            {h}
+                          </th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -405,9 +384,9 @@ export function AdminInvitations() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => handleDelete(invitation._id)}
+                                onClick={() => confirmDelete(invitation)}
                                 disabled={actionLoading}
-                                className="hover:bg-red-50 hover:text-red-700"
+                                className="text-red-600 border-red-300 hover:bg-red-50"
                                 title="Delete"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -425,7 +404,35 @@ export function AdminInvitations() {
         </TabsContent>
       </Tabs>
 
-      {/* Details Dialog */}
+      {/* ── Delete Confirmation AlertDialog ───────────────────── */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Invitation</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to permanently delete the invitation from{" "}
+              <span className="font-semibold text-gray-900">
+                {invitationToDelete?.name}
+              </span>
+              ? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={actionLoading}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirmed}
+              disabled={actionLoading}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {actionLoading ? "Deleting..." : "Yes, Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ── Details Dialog ─────────────────────────────────────── */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -442,13 +449,11 @@ export function AdminInvitations() {
 
           {selectedInvitation && (
             <div className="space-y-6">
-              {/* Status Badge */}
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <span className="text-sm text-gray-600">Current Status</span>
                 {getStatusBadge(selectedInvitation.status)}
               </div>
 
-              {/* Requester Info */}
               <div className="space-y-4">
                 <h4
                   className="text-lg text-[#1e3a5f]"
@@ -457,34 +462,25 @@ export function AdminInvitations() {
                   Requester Information
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <p className="text-xs text-gray-500 mb-1">Name</p>
-                    <p className="text-sm text-gray-900">
-                      {selectedInvitation.name}
-                    </p>
-                  </div>
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <p className="text-xs text-gray-500 mb-1">Email</p>
-                    <p className="text-sm text-gray-900">
-                      {selectedInvitation.email}
-                    </p>
-                  </div>
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <p className="text-xs text-gray-500 mb-1">Submitted On</p>
-                    <p className="text-sm text-gray-900">
-                      {new Date(selectedInvitation.createdAt).toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <p className="text-xs text-gray-500 mb-1">ID</p>
-                    <p className="text-sm text-gray-900 truncate">
-                      {selectedInvitation._id}
-                    </p>
-                  </div>
+                  {[
+                    { label: "Name", value: selectedInvitation.name },
+                    { label: "Email", value: selectedInvitation.email },
+                    {
+                      label: "Submitted On",
+                      value: new Date(
+                        selectedInvitation.createdAt,
+                      ).toLocaleString(),
+                    },
+                    { label: "ID", value: selectedInvitation._id },
+                  ].map(({ label, value }) => (
+                    <div key={label} className="p-4 bg-gray-50 rounded-lg">
+                      <p className="text-xs text-gray-500 mb-1">{label}</p>
+                      <p className="text-sm text-gray-900 truncate">{value}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              {/* Message */}
               <div className="space-y-3">
                 <h4
                   className="text-lg text-[#1e3a5f]"
@@ -510,13 +506,12 @@ export function AdminInvitations() {
               Close
             </Button>
             <Button
-              onClick={() => handleDelete(selectedInvitation?._id)}
               variant="outline"
+              onClick={() => confirmDelete(selectedInvitation)}
               disabled={actionLoading}
               className="w-full sm:w-auto text-red-600 border-red-300 hover:bg-red-50"
             >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete
+              <Trash2 className="w-4 h-4 mr-2" /> Delete
             </Button>
             {selectedInvitation?.status === "pending" && (
               <>
@@ -525,16 +520,14 @@ export function AdminInvitations() {
                   disabled={actionLoading}
                   className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white"
                 >
-                  <X className="w-4 h-4 mr-2" />
-                  Reject
+                  <X className="w-4 h-4 mr-2" /> Reject
                 </Button>
                 <Button
                   onClick={() => handleAccept(selectedInvitation._id)}
                   disabled={actionLoading}
                   className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white"
                 >
-                  <Check className="w-4 h-4 mr-2" />
-                  Accept
+                  <Check className="w-4 h-4 mr-2" /> Accept
                 </Button>
               </>
             )}

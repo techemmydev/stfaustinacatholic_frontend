@@ -21,6 +21,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import {
@@ -42,7 +52,10 @@ export function AdminReviews() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
 
-  // Fetch all testimonials on mount
+  // ── Delete confirmation state ──────────────────────────────
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [reviewToDelete, setReviewToDelete] = useState(null);
+
   useEffect(() => {
     dispatch(fetchAllTestimonialsAdmin());
   }, [dispatch]);
@@ -74,18 +87,22 @@ export function AdminReviews() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (
-      window.confirm("Are you sure you want to delete this review permanently?")
-    ) {
-      const result = await dispatch(deleteTestimonial(id));
-      if (result.error) {
-        toast.error(result.payload || "Failed to delete testimonial");
-      } else {
-        toast.success("Review deleted successfully");
-        setDialogOpen(false);
-      }
+  // ── Open delete confirmation ───────────────────────────────
+  const confirmDelete = (review) => {
+    setReviewToDelete(review);
+    setDeleteDialogOpen(true);
+    setDialogOpen(false);
+  };
+
+  const handleDeleteConfirmed = async () => {
+    const result = await dispatch(deleteTestimonial(reviewToDelete._id));
+    if (result.error) {
+      toast.error(result.payload || "Failed to delete testimonial");
+    } else {
+      toast.success("Review deleted successfully");
     }
+    setDeleteDialogOpen(false);
+    setReviewToDelete(null);
   };
 
   const handleToggleVisibility = async (id) => {
@@ -99,32 +116,20 @@ export function AdminReviews() {
   };
 
   const getStatusBadge = (status) => {
-    switch (status) {
-      case "pending":
-        return (
-          <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100">
-            Pending
-          </Badge>
-        );
-      case "approved":
-        return (
-          <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
-            Approved
-          </Badge>
-        );
-      case "rejected":
-        return (
-          <Badge className="bg-red-100 text-red-700 hover:bg-red-100">
-            Rejected
-          </Badge>
-        );
-      default:
-        return <Badge>{status}</Badge>;
-    }
+    const map = {
+      pending: "bg-orange-100 text-orange-700 hover:bg-orange-100",
+      approved: "bg-green-100 text-green-700 hover:bg-green-100",
+      rejected: "bg-red-100 text-red-700 hover:bg-red-100",
+    };
+    return (
+      <Badge className={map[status] || "bg-gray-100 text-gray-700"}>
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </Badge>
+    );
   };
 
-  const getVisibilityBadge = (isVisible) => {
-    return isVisible ? (
+  const getVisibilityBadge = (isVisible) =>
+    isVisible ? (
       <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
         Visible
       </Badge>
@@ -133,16 +138,13 @@ export function AdminReviews() {
         Hidden
       </Badge>
     );
-  };
 
   const filteredReviews = adminTestimonials.filter((review) => {
     const matchesSearch =
       review.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       review.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
       review.message.toLowerCase().includes(searchQuery.toLowerCase());
-
     const matchesTab = activeTab === "all" || review.status === activeTab;
-
     return matchesSearch && matchesTab;
   });
 
@@ -155,7 +157,6 @@ export function AdminReviews() {
 
   const visibleCount = adminTestimonials.filter((r) => r.isVisible).length;
 
-  // Show loading spinner
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -179,83 +180,59 @@ export function AdminReviews() {
         </p>
       </div>
 
-      {/* Statistics Cards */}
+      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border-0 shadow-md">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Total Reviews</p>
-                <h3
-                  className="text-3xl text-[#1e3a5f]"
-                  style={{ fontFamily: "Playfair Display, serif" }}
+        {[
+          {
+            label: "Total Reviews",
+            value: reviewCounts.all,
+            icon: MessageSquare,
+            bg: "bg-blue-50",
+            color: "text-blue-600",
+          },
+          {
+            label: "Visible on Site",
+            value: visibleCount,
+            icon: Eye,
+            bg: "bg-purple-50",
+            color: "text-purple-600",
+          },
+          {
+            label: "Pending",
+            value: reviewCounts.pending,
+            icon: MessageSquare,
+            bg: "bg-orange-50",
+            color: "text-orange-600",
+          },
+          {
+            label: "Approved",
+            value: reviewCounts.approved,
+            icon: Check,
+            bg: "bg-green-50",
+            color: "text-green-600",
+          },
+        ].map(({ label, value, icon: Icon, bg, color }) => (
+          <Card key={label} className="border-0 shadow-md">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">{label}</p>
+                  <h3
+                    className="text-3xl text-[#1e3a5f]"
+                    style={{ fontFamily: "Playfair Display, serif" }}
+                  >
+                    {value}
+                  </h3>
+                </div>
+                <div
+                  className={`w-12 h-12 ${bg} rounded-lg flex items-center justify-center`}
                 >
-                  {reviewCounts.all}
-                </h3>
+                  <Icon className={`w-6 h-6 ${color}`} />
+                </div>
               </div>
-              <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
-                <MessageSquare className="w-6 h-6 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-0 shadow-md">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Visible on Site</p>
-                <h3
-                  className="text-3xl text-[#1e3a5f]"
-                  style={{ fontFamily: "Playfair Display, serif" }}
-                >
-                  {visibleCount}
-                </h3>
-              </div>
-              <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
-                <Eye className="w-6 h-6 text-purple-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-0 shadow-md">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Pending</p>
-                <h3
-                  className="text-3xl text-[#1e3a5f]"
-                  style={{ fontFamily: "Playfair Display, serif" }}
-                >
-                  {reviewCounts.pending}
-                </h3>
-              </div>
-              <div className="w-12 h-12 bg-orange-50 rounded-lg flex items-center justify-center">
-                <MessageSquare className="w-6 h-6 text-orange-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-0 shadow-md">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Approved</p>
-                <h3
-                  className="text-3xl text-[#1e3a5f]"
-                  style={{ fontFamily: "Playfair Display, serif" }}
-                >
-                  {reviewCounts.approved}
-                </h3>
-              </div>
-              <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
-                <Check className="w-6 h-6 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Search */}
@@ -273,37 +250,43 @@ export function AdminReviews() {
         </CardContent>
       </Card>
 
-      {/* Tabs for Status Filtering */}
+      {/* Tabs */}
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
         className="space-y-6"
       >
         <TabsList className="bg-white border shadow-sm p-1">
-          <TabsTrigger
-            value="all"
-            className="data-[state=active]:bg-[#8B2635] data-[state=active]:text-white"
-          >
-            All ({reviewCounts.all})
-          </TabsTrigger>
-          <TabsTrigger
-            value="pending"
-            className="data-[state=active]:bg-orange-600 data-[state=active]:text-white"
-          >
-            Pending ({reviewCounts.pending})
-          </TabsTrigger>
-          <TabsTrigger
-            value="approved"
-            className="data-[state=active]:bg-green-600 data-[state=active]:text-white"
-          >
-            Approved ({reviewCounts.approved})
-          </TabsTrigger>
-          <TabsTrigger
-            value="rejected"
-            className="data-[state=active]:bg-red-600 data-[state=active]:text-white"
-          >
-            Rejected ({reviewCounts.rejected})
-          </TabsTrigger>
+          {[
+            {
+              value: "all",
+              label: `All (${reviewCounts.all})`,
+              active:
+                "data-[state=active]:bg-[#8B2635] data-[state=active]:text-white",
+            },
+            {
+              value: "pending",
+              label: `Pending (${reviewCounts.pending})`,
+              active:
+                "data-[state=active]:bg-orange-600 data-[state=active]:text-white",
+            },
+            {
+              value: "approved",
+              label: `Approved (${reviewCounts.approved})`,
+              active:
+                "data-[state=active]:bg-green-600 data-[state=active]:text-white",
+            },
+            {
+              value: "rejected",
+              label: `Rejected (${reviewCounts.rejected})`,
+              active:
+                "data-[state=active]:bg-red-600 data-[state=active]:text-white",
+            },
+          ].map(({ value, label, active }) => (
+            <TabsTrigger key={value} value={value} className={active}>
+              {label}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
         <TabsContent value={activeTab} className="space-y-4">
@@ -337,24 +320,21 @@ export function AdminReviews() {
                   <table className="w-full">
                     <thead className="bg-gray-50 border-b">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">
-                          Parishioner
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">
-                          Message Preview
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">
-                          Visibility
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">
-                          Date
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">
-                          Actions
-                        </th>
+                        {[
+                          "Parishioner",
+                          "Message Preview",
+                          "Status",
+                          "Visibility",
+                          "Date",
+                          "Actions",
+                        ].map((h) => (
+                          <th
+                            key={h}
+                            className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider"
+                          >
+                            {h}
+                          </th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -456,9 +436,9 @@ export function AdminReviews() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => handleDelete(review._id)}
+                                onClick={() => confirmDelete(review)}
                                 disabled={actionLoading}
-                                className="hover:bg-red-50 hover:text-red-700"
+                                className="text-red-600 border-red-300 hover:bg-red-50"
                                 title="Delete"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -476,7 +456,35 @@ export function AdminReviews() {
         </TabsContent>
       </Tabs>
 
-      {/* Details Dialog */}
+      {/* ── Delete Confirmation AlertDialog ───────────────────── */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Testimonial</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to permanently delete the review from{" "}
+              <span className="font-semibold text-gray-900">
+                {reviewToDelete?.name}
+              </span>
+              ? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={actionLoading}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirmed}
+              disabled={actionLoading}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {actionLoading ? "Deleting..." : "Yes, Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ── Details Dialog ─────────────────────────────────────── */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -493,7 +501,6 @@ export function AdminReviews() {
 
           {selectedReview && (
             <div className="space-y-6">
-              {/* Status Badge */}
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <span className="text-sm text-gray-600">Current Status</span>
                 <div className="flex items-center gap-2">
@@ -503,7 +510,6 @@ export function AdminReviews() {
                 </div>
               </div>
 
-              {/* Parishioner Info */}
               <div className="space-y-4">
                 <h4
                   className="text-lg text-[#1e3a5f]"
@@ -512,34 +518,25 @@ export function AdminReviews() {
                   Parishioner Information
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <p className="text-xs text-gray-500 mb-1">Name</p>
-                    <p className="text-sm text-gray-900">
-                      {selectedReview.name}
-                    </p>
-                  </div>
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <p className="text-xs text-gray-500 mb-1">Role</p>
-                    <p className="text-sm text-gray-900">
-                      {selectedReview.role}
-                    </p>
-                  </div>
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <p className="text-xs text-gray-500 mb-1">Submitted On</p>
-                    <p className="text-sm text-gray-900">
-                      {new Date(selectedReview.createdAt).toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <p className="text-xs text-gray-500 mb-1">ID</p>
-                    <p className="text-sm text-gray-900 truncate">
-                      {selectedReview._id}
-                    </p>
-                  </div>
+                  {[
+                    { label: "Name", value: selectedReview.name },
+                    { label: "Role", value: selectedReview.role },
+                    {
+                      label: "Submitted On",
+                      value: new Date(
+                        selectedReview.createdAt,
+                      ).toLocaleString(),
+                    },
+                    { label: "ID", value: selectedReview._id },
+                  ].map(({ label, value }) => (
+                    <div key={label} className="p-4 bg-gray-50 rounded-lg">
+                      <p className="text-xs text-gray-500 mb-1">{label}</p>
+                      <p className="text-sm text-gray-900 truncate">{value}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              {/* Testimonial Content */}
               <div className="space-y-3">
                 <h4
                   className="text-lg text-[#1e3a5f]"
@@ -565,13 +562,12 @@ export function AdminReviews() {
               Close
             </Button>
             <Button
-              onClick={() => handleDelete(selectedReview?._id)}
               variant="outline"
+              onClick={() => confirmDelete(selectedReview)}
               disabled={actionLoading}
               className="w-full sm:w-auto text-red-600 border-red-300 hover:bg-red-50"
             >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete
+              <Trash2 className="w-4 h-4 mr-2" /> Delete
             </Button>
             {selectedReview?.status === "approved" && (
               <Button
@@ -599,16 +595,14 @@ export function AdminReviews() {
                   disabled={actionLoading}
                   className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white"
                 >
-                  <X className="w-4 h-4 mr-2" />
-                  Reject
+                  <X className="w-4 h-4 mr-2" /> Reject
                 </Button>
                 <Button
                   onClick={() => handleApprove(selectedReview._id)}
                   disabled={actionLoading}
                   className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white"
                 >
-                  <Check className="w-4 h-4 mr-2" />
-                  Approve
+                  <Check className="w-4 h-4 mr-2" /> Approve
                 </Button>
               </>
             )}
