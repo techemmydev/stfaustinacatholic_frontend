@@ -24,7 +24,9 @@ export const logoutAdmin = createAsyncThunk(
   "admin/logout",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${API_URL}/logout`);
+      const response = await axios.post(`${API_URL}/logout`, {
+        withCredentials: true,
+      });
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || "Logout failed");
@@ -37,7 +39,7 @@ export const changePassword = createAsyncThunk(
   async (passwords, { rejectWithValue }) => {
     try {
       const response = await axios.put(
-        `${API_URL}/admin/change-password`,
+        `${API_URL}/change-password`,
         passwords,
         {
           headers: { "Content-Type": "application/json" },
@@ -124,7 +126,7 @@ export const toggleAdminStatus = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       const response = await axios.patch(
-        `${API_URL}/admin/users/${id}/toggle-status`,
+        `${API_URL}/users/${id}/toggle-status`,
       );
       return response.data;
     } catch (error) {
