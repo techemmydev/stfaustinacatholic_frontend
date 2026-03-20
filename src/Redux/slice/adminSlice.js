@@ -3,7 +3,15 @@ import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_URLA;
 
-// Login admin
+// ── Auth header helper ─────────────────────────────────────────
+// Sends the token in the Authorization header as a fallback for
+// mobile browsers (Safari ITP) that block cross-site cookies.
+const authHeader = () => {
+  const token = localStorage.getItem("adminToken");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+// ── Login ──────────────────────────────────────────────────────
 export const loginAdmin = createAsyncThunk(
   "admin/login",
   async (credentials, { rejectWithValue }) => {
@@ -19,14 +27,19 @@ export const loginAdmin = createAsyncThunk(
   },
 );
 
-// Logout admin
+// ── Logout ─────────────────────────────────────────────────────
 export const logoutAdmin = createAsyncThunk(
   "admin/logout",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${API_URL}/logout`, {
-        withCredentials: true,
-      });
+      const response = await axios.post(
+        `${API_URL}/logout`,
+        {},
+        {
+          withCredentials: true,
+          headers: authHeader(),
+        },
+      );
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || "Logout failed");
@@ -34,6 +47,7 @@ export const logoutAdmin = createAsyncThunk(
   },
 );
 
+// ── Change password ────────────────────────────────────────────
 export const changePassword = createAsyncThunk(
   "admin/changePassword",
   async (passwords, { rejectWithValue }) => {
@@ -42,7 +56,10 @@ export const changePassword = createAsyncThunk(
         `${API_URL}/change-password`,
         passwords,
         {
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...authHeader(),
+          },
         },
       );
       return response.data;
@@ -54,13 +71,14 @@ export const changePassword = createAsyncThunk(
   },
 );
 
-// Get current admin
+// ── Get current admin (used on refresh to restore session) ─────
 export const getCurrentAdmin = createAsyncThunk(
   "admin/getCurrent",
   async (_, { rejectWithValue }) => {
     try {
       const response = await axios.get(`${API_URL}/me`, {
         withCredentials: true,
+        headers: authHeader(),
       });
       return response.data;
     } catch (error) {
@@ -71,12 +89,15 @@ export const getCurrentAdmin = createAsyncThunk(
   },
 );
 
-// Get all admins
+// ── Fetch all admins ───────────────────────────────────────────
 export const fetchAllAdmins = createAsyncThunk(
   "admin/fetchAll",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${API_URL}/users`);
+      const response = await axios.get(`${API_URL}/users`, {
+        withCredentials: true,
+        headers: authHeader(),
+      });
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -86,13 +107,17 @@ export const fetchAllAdmins = createAsyncThunk(
   },
 );
 
-// Create admin
+// ── Create admin ───────────────────────────────────────────────
 export const createAdmin = createAsyncThunk(
   "admin/create",
   async (adminData, { rejectWithValue }) => {
     try {
       const response = await axios.post(`${API_URL}/users`, adminData, {
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeader(),
+        },
+        withCredentials: true,
       });
       return response.data;
     } catch (error) {
@@ -103,13 +128,17 @@ export const createAdmin = createAsyncThunk(
   },
 );
 
-// Update admin
+// ── Update admin ───────────────────────────────────────────────
 export const updateAdmin = createAsyncThunk(
   "admin/update",
   async ({ id, data }, { rejectWithValue }) => {
     try {
       const response = await axios.put(`${API_URL}/users/${id}`, data, {
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeader(),
+        },
+        withCredentials: true,
       });
       return response.data;
     } catch (error) {
@@ -120,13 +149,18 @@ export const updateAdmin = createAsyncThunk(
   },
 );
 
-// Toggle admin status
+// ── Toggle admin status ────────────────────────────────────────
 export const toggleAdminStatus = createAsyncThunk(
   "admin/toggleStatus",
   async (id, { rejectWithValue }) => {
     try {
       const response = await axios.patch(
         `${API_URL}/users/${id}/toggle-status`,
+        {},
+        {
+          withCredentials: true,
+          headers: authHeader(),
+        },
       );
       return response.data;
     } catch (error) {
@@ -137,12 +171,15 @@ export const toggleAdminStatus = createAsyncThunk(
   },
 );
 
-// Delete admin
+// ── Delete admin ───────────────────────────────────────────────
 export const deleteAdmin = createAsyncThunk(
   "admin/delete",
   async (id, { rejectWithValue }) => {
     try {
-      const response = await axios.delete(`${API_URL}/users/${id}`);
+      const response = await axios.delete(`${API_URL}/users/${id}`, {
+        withCredentials: true,
+        headers: authHeader(),
+      });
       return { id, message: response.data.message };
     } catch (error) {
       return rejectWithValue(
@@ -152,6 +189,7 @@ export const deleteAdmin = createAsyncThunk(
   },
 );
 
+// ── Slice ──────────────────────────────────────────────────────
 const adminSlice = createSlice({
   name: "admin",
   initialState: {
@@ -176,153 +214,141 @@ const adminSlice = createSlice({
 
   extraReducers: (builder) => {
     builder
-      /* -------- Login: Pending -------- */
+      /* -------- Login -------- */
       .addCase(loginAdmin.pending, (state) => {
         state.loading = true;
-        state.error = null; // Clear previous errors
+        state.error = null;
       })
-      /* -------- Login: Fulfilled -------- */
       .addCase(loginAdmin.fulfilled, (state, action) => {
         state.loading = false;
         state.currentAdmin = action.payload.admin;
         state.isAuthenticated = true;
-        state.error = null; // Clear any errors on success
+        state.error = null;
+        // Save token for mobile browsers that block cookies (Safari ITP)
+        if (action.payload.token) {
+          localStorage.setItem("adminToken", action.payload.token);
+        }
       })
-      /* -------- Login: Rejected -------- */
       .addCase(loginAdmin.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
 
-      /* -------- Logout: Pending -------- */
+      /* -------- Logout -------- */
       .addCase(logoutAdmin.pending, (state) => {
         state.loading = true;
       })
-      /* -------- Logout: Fulfilled -------- */
       .addCase(logoutAdmin.fulfilled, (state) => {
         state.loading = false;
         state.currentAdmin = null;
         state.isAuthenticated = false;
         state.error = null;
+        localStorage.removeItem("adminToken");
       })
-      /* -------- Logout: Rejected -------- */
       .addCase(logoutAdmin.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
 
-      /* -------- Change Password: Pending -------- */
+      /* -------- Change Password -------- */
       .addCase(changePassword.pending, (state) => {
         state.actionLoading = true;
         state.error = null;
       })
-      /* -------- Change Password: Fulfilled -------- */
       .addCase(changePassword.fulfilled, (state) => {
         state.actionLoading = false;
         state.error = null;
       })
-      /* -------- Change Password: Rejected -------- */
       .addCase(changePassword.rejected, (state, action) => {
         state.actionLoading = false;
         state.error = action.payload;
       })
 
-      /* -------- Get Current Admin: Pending -------- */
+      /* -------- Get Current Admin -------- */
       .addCase(getCurrentAdmin.pending, (state) => {
         state.loading = true;
       })
-      /* -------- Get Current Admin: Fulfilled -------- */
       .addCase(getCurrentAdmin.fulfilled, (state, action) => {
         state.loading = false;
         state.currentAdmin = action.payload;
         state.isAuthenticated = true;
         state.error = null;
       })
-      /* -------- Get Current Admin: Rejected -------- */
       .addCase(getCurrentAdmin.rejected, (state) => {
         state.loading = false;
         state.isAuthenticated = false;
         state.currentAdmin = null;
+        // Clear expired or invalid token from storage
+        localStorage.removeItem("adminToken");
       })
 
-      /* -------- Fetch All Admins: Pending -------- */
+      /* -------- Fetch All Admins -------- */
       .addCase(fetchAllAdmins.pending, (state) => {
         state.adminsLoading = true;
-        state.error = null; // Clear previous errors
+        state.error = null;
       })
-      /* -------- Fetch All Admins: Fulfilled -------- */
       .addCase(fetchAllAdmins.fulfilled, (state, action) => {
         state.adminsLoading = false;
         state.admins = action.payload;
         state.error = null;
       })
-      /* -------- Fetch All Admins: Rejected -------- */
       .addCase(fetchAllAdmins.rejected, (state, action) => {
         state.adminsLoading = false;
         state.error = action.payload;
       })
 
-      /* -------- Create Admin: Pending -------- */
+      /* -------- Create Admin -------- */
       .addCase(createAdmin.pending, (state) => {
         state.actionLoading = true;
-        state.error = null; // Clear previous errors
+        state.error = null;
       })
-      /* -------- Create Admin: Fulfilled -------- */
-      .addCase(createAdmin.fulfilled, (state, action) => {
+      .addCase(createAdmin.fulfilled, (state) => {
         state.actionLoading = false;
         state.error = null;
-        // Will refetch the list after creation
       })
-      /* -------- Create Admin: Rejected -------- */
       .addCase(createAdmin.rejected, (state, action) => {
         state.actionLoading = false;
         state.error = action.payload;
       })
 
-      /* -------- Update Admin: Pending -------- */
+      /* -------- Update Admin -------- */
       .addCase(updateAdmin.pending, (state) => {
         state.actionLoading = true;
-        state.error = null; // Clear previous errors
+        state.error = null;
       })
-      /* -------- Update Admin: Fulfilled -------- */
       .addCase(updateAdmin.fulfilled, (state) => {
         state.actionLoading = false;
         state.error = null;
       })
-      /* -------- Update Admin: Rejected -------- */
       .addCase(updateAdmin.rejected, (state, action) => {
         state.actionLoading = false;
         state.error = action.payload;
       })
 
-      /* -------- Toggle Status: Pending -------- */
+      /* -------- Toggle Status -------- */
       .addCase(toggleAdminStatus.pending, (state) => {
         state.actionLoading = true;
         state.error = null;
       })
-      /* -------- Toggle Status: Fulfilled -------- */
       .addCase(toggleAdminStatus.fulfilled, (state) => {
         state.actionLoading = false;
         state.error = null;
       })
-      /* -------- Toggle Status: Rejected -------- */
       .addCase(toggleAdminStatus.rejected, (state, action) => {
         state.actionLoading = false;
         state.error = action.payload;
       })
 
-      /* -------- Delete Admin: Pending -------- */
+      /* -------- Delete Admin -------- */
       .addCase(deleteAdmin.pending, (state) => {
         state.actionLoading = true;
         state.error = null;
       })
-      /* -------- Delete Admin: Fulfilled -------- */
       .addCase(deleteAdmin.fulfilled, (state, action) => {
         state.actionLoading = false;
         state.admins = state.admins.filter((a) => a._id !== action.payload.id);
         state.error = null;
       })
-      /* -------- Delete Admin: Rejected -------- */
       .addCase(deleteAdmin.rejected, (state, action) => {
         state.actionLoading = false;
         state.error = action.payload;
