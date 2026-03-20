@@ -1,16 +1,18 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { Link } from "react-router";
 import {
   Calendar,
   Users,
   Clock,
-  Star,
   PartyPopper,
   MessageSquare,
   UserCheck,
-  TrendingUp,
   CalendarCheck,
   Mail,
+  ArrowRight,
+  Activity,
+  ChevronRight,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -27,40 +29,30 @@ import { fetchParishioners } from "../Redux/slice/ParishUserRegistrationSlice";
 // ── helpers ───────────────────────────────────────────────────
 const getStatusBadge = (status) => {
   const map = {
-    pending: "bg-orange-100 text-orange-700",
-    approved: "bg-green-100 text-green-700",
-    accepted: "bg-green-100 text-green-700",
-    rejected: "bg-red-100 text-red-700",
+    pending: "bg-amber-50 text-amber-700 border border-amber-200",
+    approved: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+    accepted: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+    rejected: "bg-red-50 text-red-700 border border-red-200",
+    unread: "bg-blue-50 text-blue-700 border border-blue-200",
   };
   return (
     <Badge
-      className={`${map[status] || "bg-gray-100 text-gray-700"} hover:opacity-90`}
+      className={`${map[status] || "bg-gray-50 text-gray-700 border border-gray-200"} hover:opacity-90 font-medium text-[11px] px-2 py-0.5`}
     >
       {status.charAt(0).toUpperCase() + status.slice(1)}
     </Badge>
   );
 };
 
-const renderStars = (rating) => (
-  <div className="flex items-center space-x-0.5">
-    {[1, 2, 3, 4, 5].map((star) => (
-      <Star
-        key={star}
-        className={`w-3 h-3 ${star <= rating ? "fill-[#d4af37] text-[#d4af37]" : "text-gray-300"}`}
-      />
-    ))}
-  </div>
-);
-
 const getCategoryColor = (category) => {
   const colors = {
-    Retreat: "bg-purple-100 text-purple-700",
-    Festival: "bg-pink-100 text-pink-700",
-    Service: "bg-green-100 text-green-700",
-    Study: "bg-blue-100 text-blue-700",
-    Event: "bg-gray-100 text-gray-700",
+    Retreat: "bg-violet-50 text-violet-700",
+    Festival: "bg-rose-50 text-rose-700",
+    Service: "bg-emerald-50 text-emerald-700",
+    Study: "bg-sky-50 text-sky-700",
+    Event: "bg-gray-50 text-gray-700",
   };
-  return colors[category] || "bg-gray-100 text-gray-700";
+  return colors[category] || "bg-gray-50 text-gray-700";
 };
 
 const formatDate = (d) =>
@@ -73,20 +65,59 @@ const formatDate = (d) =>
     : "—";
 
 const statusDot = (status) => {
-  if (status === "Available") return "bg-green-500";
-  if (status === "On Leave") return "bg-yellow-500";
+  if (status === "Available") return "bg-emerald-500";
+  if (status === "On Leave") return "bg-amber-400";
   return "bg-red-400";
 };
 
-// ── skeleton helpers ──────────────────────────────────────────
 const Skeleton = ({ className }) => (
-  <div className={`animate-pulse bg-gray-200 rounded ${className}`} />
+  <div className={`animate-pulse bg-gray-100 rounded-lg ${className}`} />
 );
+
+const timeAgo = (dateStr) => {
+  if (!dateStr) return "";
+  const diff = (Date.now() - new Date(dateStr)) / 1000;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+};
+
+// ── Stat Card ─────────────────────────────────────────────────
+function StatCard({ title, value, loading, icon: Icon, accent, sub, link }) {
+  return (
+    <Link to={link || "#"}>
+      <div className="group bg-white rounded-2xl border border-gray-100 p-5 hover:border-gray-200 hover:shadow-md transition-all duration-200 cursor-pointer h-full">
+        <div className="flex items-start justify-between mb-4">
+          <div
+            className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: accent + "18" }}
+          >
+            <Icon className="w-5 h-5" style={{ color: accent }} />
+          </div>
+          <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-400 group-hover:translate-x-0.5 transition-all" />
+        </div>
+        {loading ? (
+          <Skeleton className="h-8 w-16 mb-2" />
+        ) : (
+          <p
+            className="text-3xl font-semibold text-[#1e3a5f] mb-1"
+            style={{ fontFamily: "Playfair Display, serif" }}
+          >
+            {value}
+          </p>
+        )}
+        <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
+          {title}
+        </p>
+        {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+      </div>
+    </Link>
+  );
+}
 
 export function AdminDashboardPage() {
   const dispatch = useDispatch();
 
-  // ── selectors ─────────────────────────────────────────────
   const { adminAppointments = [], loading: apptLoading } = useSelector(
     (s) => s.appointment || {},
   );
@@ -109,7 +140,6 @@ export function AdminDashboardPage() {
     (s) => s.parishRegister || {},
   );
 
-  // ── fetch all on mount ────────────────────────────────────
   useEffect(() => {
     dispatch(fetchAllAppointmentsAdmin());
     dispatch(fetchAllThanksgivingsAdmin());
@@ -138,622 +168,504 @@ export function AdminDashboardPage() {
     (c) => c.status === "unread",
   ).length;
 
-  const approvedReviews = adminTestimonials.filter(
-    (r) => r.status === "approved",
-  );
-  const avgRating =
-    approvedReviews.length > 0
-      ? (
-          approvedReviews.reduce((sum, r) => sum + (r.rating || 0), 0) /
-          approvedReviews.length
-        ).toFixed(1)
-      : "—";
-
-  const thisWeekTotal =
-    pendingAppointments +
-    pendingThanksgivings +
-    pendingReviews +
-    unreadContacts;
-
-  // ── quick actions (live counts) ────────────────────────────
-  const quickActions = [
-    {
-      title: "View Appointments",
-      description: "Manage sacrament appointments",
-      icon: Calendar,
-      link: "/admin/appointments",
-      color: "bg-blue-500",
-      count: `${pendingAppointments} pending`,
-    },
-    {
-      title: "Mass Bookings",
-      description: "Review mass booking requests",
-      icon: CalendarCheck,
-      link: "/admin/mass-bookings",
-      color: "bg-purple-500",
-      count: `${pendingThanksgivings} pending`,
-    },
-    {
-      title: "Moderate Reviews",
-      description: "Approve parishioner testimonials",
-      icon: MessageSquare,
-      link: "/admin/reviews",
-      color: "bg-green-500",
-      count: `${pendingReviews} pending`,
-    },
-    {
-      title: "Manage Events",
-      description: "Add and update parish events",
-      icon: PartyPopper,
-      link: "/admin/events",
-      color: "bg-pink-500",
-      count: `${upcomingEventsCount} upcoming`,
-    },
-  ];
-
-  // ── stat cards config ─────────────────────────────────────
-  const stats = [
-    {
-      title: "Pending Appointments",
-      value: pendingAppointments,
-      loading: apptLoading,
-      icon: Clock,
-      color: "text-orange-600",
-      bgColor: "bg-orange-50",
-      change: `${adminAppointments.length} total`,
-      trend: pendingAppointments > 0 ? "up" : "neutral",
-    },
-    {
-      title: "Mass Bookings",
-      value: pendingThanksgivings,
-      loading: thankLoading,
-      icon: CalendarCheck,
-      color: "text-blue-600",
-      bgColor: "bg-blue-50",
-      change: `${adminThanksgivings.length} total`,
-      trend: "neutral",
-    },
-    {
-      title: "Total Parishioners",
-      value: totalParishioners,
-      loading: false,
-      icon: UserCheck,
-      color: "text-purple-600",
-      bgColor: "bg-purple-50",
-      change: "registered members",
-      trend: "up",
-    },
-    {
-      title: "Pending Reviews",
-      value: pendingReviews,
-      loading: reviewsLoading,
-      icon: MessageSquare,
-      color: "text-green-600",
-      bgColor: "bg-green-50",
-      change: `${adminTestimonials.length} total`,
-      trend: pendingReviews > 0 ? "up" : "neutral",
-    },
-    {
-      title: "Upcoming Events",
-      value: upcomingEventsCount,
-      loading: eventsLoading,
-      icon: PartyPopper,
-      color: "text-pink-600",
-      bgColor: "bg-pink-50",
-      change: `${adminEvents.length} total events`,
-      trend: "neutral",
-    },
-    {
-      title: "Average Rating",
-      value: avgRating,
-      loading: reviewsLoading,
-      icon: Star,
-      color: "text-yellow-600",
-      bgColor: "bg-yellow-50",
-      change: `From ${approvedReviews.length} reviews`,
-      trend: "up",
-    },
-    {
-      title: "Active Priests",
-      value: activePriests,
-      loading: priestsLoading,
-      icon: Users,
-      color: "text-indigo-600",
-      bgColor: "bg-indigo-50",
-      change: `${adminPriests.length} total priests`,
-      trend: "neutral",
-    },
-    {
-      title: "Unread Messages",
-      value: unreadContacts,
-      loading: contactsLoading,
-      icon: Mail,
-      color: "text-cyan-600",
-      bgColor: "bg-cyan-50",
-      change: `${adminContacts.length} total messages`,
-      trend: unreadContacts > 0 ? "up" : "neutral",
-    },
-  ];
-
-  // ── recent slices ─────────────────────────────────────────
   const recentAppointments = [...adminAppointments]
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    .slice(0, 4);
+    .slice(0, 5);
 
   const recentThanksgivings = [...adminThanksgivings]
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    .slice(0, 3);
+    .slice(0, 4);
 
   const upcomingEvents = adminEvents
     .filter((e) => e.isPublished && new Date(e.date) >= new Date())
     .sort((a, b) => new Date(a.date) - new Date(b.date))
-    .slice(0, 3);
+    .slice(0, 4);
 
   const recentReviews = [...adminTestimonials]
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 3);
 
-  // ── activity feed: merge recent items from all slices ─────
   const activityFeed = [
     ...adminAppointments.slice(0, 3).map((a) => ({
-      color: "bg-blue-500",
-      text: (
-        <>
-          <span className="font-medium">New appointment</span> from {a.name} —{" "}
-          {a.appointmentType}
-        </>
-      ),
+      color: "#3b82f6",
+      icon: Calendar,
+      text: `New appointment from ${a.name}`,
+      sub: a.appointmentType,
       date: a.createdAt,
     })),
     ...adminThanksgivings
       .filter((t) => t.status === "approved")
       .slice(0, 2)
       .map((t) => ({
-        color: "bg-green-500",
-        text: (
-          <>
-            <span className="font-medium">Mass booking approved</span> for{" "}
-            {t.name}
-          </>
-        ),
+        color: "#10b981",
+        icon: CalendarCheck,
+        text: `Mass booking approved for ${t.name}`,
+        sub: t.mass?.name || "Mass booking",
         date: t.updatedAt || t.createdAt,
       })),
     ...adminTestimonials.slice(0, 2).map((r) => ({
-      color: "bg-yellow-500",
-      text: (
-        <>
-          <span className="font-medium">Review submitted</span> by {r.name}
-          {r.rating ? ` — ${r.rating} stars` : ""}
-        </>
-      ),
+      color: "#f59e0b",
+      icon: MessageSquare,
+      text: `Review submitted by ${r.name}`,
+      sub: r.role || "Parishioner",
       date: r.createdAt,
     })),
-    ...adminEvents.slice(0, 2).map((e) => ({
-      color: "bg-purple-500",
-      text: (
-        <>
-          <span className="font-medium">Event: </span>
-          {e.title}
-        </>
-      ),
-      date: e.createdAt,
-    })),
-    ...adminContacts.slice(0, 2).map((c) => ({
-      color: "bg-pink-500",
-      text: (
-        <>
-          <span className="font-medium">Message received</span> from {c.name}
-        </>
-      ),
-      date: c.createdAt,
-    })),
+    ...adminContacts
+      .filter((c) => c.status === "unread")
+      .slice(0, 2)
+      .map((c) => ({
+        color: "#8b5cf6",
+        icon: Mail,
+        text: `New message from ${c.name}`,
+        sub: c.subject || "No subject",
+        date: c.createdAt,
+      })),
   ]
     .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .slice(0, 6);
+    .slice(0, 7);
 
-  const timeAgo = (dateStr) => {
-    if (!dateStr) return "";
-    const diff = (Date.now() - new Date(dateStr)) / 1000;
-    if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
-    return `${Math.floor(diff / 86400)} days ago`;
-  };
+  const stats = [
+    {
+      title: "Pending Appointments",
+      value: pendingAppointments,
+      loading: apptLoading,
+      icon: Clock,
+      accent: "#f97316",
+      sub: `${adminAppointments.length} total`,
+      link: "/admin/appointments",
+    },
+    {
+      title: "Mass Bookings",
+      value: pendingThanksgivings,
+      loading: thankLoading,
+      icon: CalendarCheck,
+      accent: "#3b82f6",
+      sub: `${adminThanksgivings.length} total`,
+      link: "/admin/mass-bookings",
+    },
+    {
+      title: "Parishioners",
+      value: totalParishioners,
+      loading: false,
+      icon: UserCheck,
+      accent: "#8b5cf6",
+      sub: "registered members",
+      link: "/admin/parishioners",
+    },
+    {
+      title: "Pending Reviews",
+      value: pendingReviews,
+      loading: reviewsLoading,
+      icon: MessageSquare,
+      accent: "#10b981",
+      sub: `${adminTestimonials.length} total`,
+      link: "/admin/reviews",
+    },
+    {
+      title: "Upcoming Events",
+      value: upcomingEventsCount,
+      loading: eventsLoading,
+      icon: PartyPopper,
+      accent: "#ec4899",
+      sub: `${adminEvents.length} total events`,
+      link: "/admin/events",
+    },
+    {
+      title: "Active Priests",
+      value: activePriests,
+      loading: priestsLoading,
+      icon: Users,
+      accent: "#6366f1",
+      sub: `${adminPriests.length} total`,
+      link: "/admin/priests",
+    },
+    {
+      title: "Unread Messages",
+      value: unreadContacts,
+      loading: contactsLoading,
+      icon: Mail,
+      accent: "#06b6d4",
+      sub: `${adminContacts.length} total`,
+      link: "/admin/contacts",
+    },
+    {
+      title: "Total Activities",
+      value:
+        adminAppointments.length +
+        adminThanksgivings.length +
+        adminTestimonials.length,
+      loading: apptLoading,
+      icon: Activity,
+      accent: "#8B2635",
+      sub: "across all modules",
+      link: "/admin/dashboard",
+    },
+  ];
 
   return (
-    <div className="space-y-6">
-      {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-[#1e3a5f] to-[#8B2635] rounded-lg p-6 text-white shadow-lg">
-        <h2
-          className="text-2xl mb-2"
-          style={{ fontFamily: "Playfair Display, serif" }}
-        >
-          Welcome to Parish Admin Dashboard
-        </h2>
-        <p className="text-gray-100">
-          Here's a live overview of your parish activities and pending actions
-        </p>
-      </div>
+    <div className="space-y-8 pb-8">
+      {/* ── Welcome Banner ──────────────────────────────────── */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1e3a5f] via-[#2d5286] to-[#8B2635] p-8 text-white shadow-xl">
+        {/* decorative circles */}
+        <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full bg-white/5" />
+        <div className="absolute -bottom-8 -left-8 w-36 h-36 rounded-full bg-white/5" />
+        <div className="absolute top-1/2 right-32 w-20 h-20 rounded-full bg-white/5" />
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <Card
-              key={index}
-              className="border-0 shadow-md hover:shadow-lg transition-shadow"
-            >
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
-                    {stat.loading ? (
-                      <Skeleton className="h-9 w-14 mb-1" />
-                    ) : (
-                      <h3
-                        className="text-3xl text-[#1e3a5f] mb-1"
-                        style={{ fontFamily: "Playfair Display, serif" }}
-                      >
-                        {stat.value}
-                      </h3>
-                    )}
-                    <div className="flex items-center space-x-1">
-                      {stat.trend === "up" && (
-                        <TrendingUp className="w-3 h-3 text-green-600" />
-                      )}
-                      <p className="text-xs text-gray-500">{stat.change}</p>
-                    </div>
-                  </div>
-                  <div className={`${stat.bgColor} p-3 rounded-lg`}>
-                    <Icon className={`w-6 h-6 ${stat.color}`} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      {/* Quick Actions */}
-      <Card className="border-0 shadow-md">
-        <CardHeader className="border-b bg-gray-50">
-          <CardTitle
-            className="text-[#1e3a5f]"
-            style={{ fontFamily: "Playfair Display, serif" }}
-          >
-            Quick Actions
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {quickActions.map((action, index) => {
-              const Icon = action.icon;
-              return (
-                <a
-                  key={index}
-                  href={action.link}
-                  className="group relative overflow-hidden rounded-lg border border-gray-200 p-4 hover:shadow-lg transition-all duration-300"
-                >
-                  <div className="flex items-start space-x-3">
-                    <div
-                      className={`${action.color} p-2 rounded-lg text-white`}
-                    >
-                      <Icon className="w-5 h-5" />
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="text-sm font-medium text-gray-900 mb-1 group-hover:text-[#8B2635] transition-colors">
-                        {action.title}
-                      </h4>
-                      <p className="text-xs text-gray-500 mb-2">
-                        {action.description}
-                      </p>
-                      <Badge className="text-xs">{action.count}</Badge>
-                    </div>
-                  </div>
-                </a>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Two Column: Appointments + Mass Bookings */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Appointments */}
-        <Card className="border-0 shadow-md">
-          <CardHeader className="border-b bg-gray-50 flex flex-row items-center justify-between">
-            <CardTitle
-              className="text-[#1e3a5f]"
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <p className="text-white/60 text-sm font-medium uppercase tracking-widest mb-2">
+              Parish Administration
+            </p>
+            <h2
+              className="text-3xl md:text-4xl mb-2"
               style={{ fontFamily: "Playfair Display, serif" }}
             >
-              Recent Appointments
-            </CardTitle>
-            <a
-              href="/admin/appointments"
-              className="text-sm text-[#8B2635] hover:underline"
-            >
-              View all
-            </a>
-          </CardHeader>
-          <CardContent className="p-0">
-            {apptLoading ? (
-              <div className="p-4 space-y-3">
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <Skeleton className="w-10 h-10 rounded-full" />
-                    <div className="flex-1 space-y-1.5">
-                      <Skeleton className="h-3 w-32" />
-                      <Skeleton className="h-3 w-20" />
-                    </div>
-                    <Skeleton className="h-6 w-16 rounded-full" />
-                  </div>
-                ))}
+              Welcome Back
+            </h2>
+            <p className="text-white/70 text-sm max-w-md">
+              Here's a live overview of all parish activities, pending actions,
+              and recent submissions.
+            </p>
+          </div>
+
+          {/* Summary pills */}
+          <div className="flex flex-wrap gap-3">
+            {[
+              {
+                label: "Pending",
+                value:
+                  pendingAppointments + pendingThanksgivings + pendingReviews,
+                color: "bg-amber-400/20 text-amber-200 border-amber-400/30",
+              },
+              {
+                label: "Unread",
+                value: unreadContacts,
+                color: "bg-blue-400/20 text-blue-200 border-blue-400/30",
+              },
+              {
+                label: "Events",
+                value: upcomingEventsCount,
+                color:
+                  "bg-emerald-400/20 text-emerald-200 border-emerald-400/30",
+              },
+            ].map(({ label, value, color }) => (
+              <div
+                key={label}
+                className={`border rounded-xl px-4 py-3 ${color} backdrop-blur-sm`}
+              >
+                <p className="text-2xl font-bold leading-none mb-0.5">
+                  {value}
+                </p>
+                <p className="text-xs opacity-80 uppercase tracking-wide">
+                  {label}
+                </p>
               </div>
-            ) : recentAppointments.length === 0 ? (
-              <p className="p-6 text-center text-sm text-gray-400">
-                No appointments yet
-              </p>
-            ) : (
-              <div className="divide-y divide-gray-200">
-                {recentAppointments.map((apt) => (
-                  <div
-                    key={apt._id}
-                    className="p-4 hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#8B2635] to-[#d4af37] flex items-center justify-center flex-shrink-0">
-                          <span
-                            className="text-white text-sm"
-                            style={{ fontFamily: "Playfair Display, serif" }}
-                          >
-                            {apt.name?.charAt(0)}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">
-                            {apt.name}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {apt.appointmentType}
-                          </p>
-                        </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Stats Grid ──────────────────────────────────────── */}
+      <div>
+        <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4">
+          Overview
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {stats.map((stat, i) => (
+            <StatCard key={i} {...stat} />
+          ))}
+        </div>
+      </div>
+
+      {/* ── Main Content Grid ────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Appointments — takes 2 cols */}
+        <div className="lg:col-span-2">
+          <Card className="border-0 shadow-sm rounded-2xl overflow-hidden h-full">
+            <CardHeader className="border-b border-gray-50 bg-white px-6 py-4">
+              <div className="flex items-center justify-between">
+                <CardTitle
+                  className="text-[#1e3a5f] text-base"
+                  style={{ fontFamily: "Playfair Display, serif" }}
+                >
+                  Recent Appointments
+                </CardTitle>
+                <Link
+                  to="/admin/appointments"
+                  className="flex items-center gap-1 text-xs text-[#8B2635] hover:underline font-medium"
+                >
+                  View all <ArrowRight className="w-3 h-3" />
+                </Link>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              {apptLoading ? (
+                <div className="p-6 space-y-4">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <Skeleton className="w-10 h-10 rounded-full" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-3 w-36" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                      <Skeleton className="h-6 w-16 rounded-full" />
+                    </div>
+                  ))}
+                </div>
+              ) : recentAppointments.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                  <Calendar className="w-10 h-10 mb-3 text-gray-200" />
+                  <p className="text-sm">No appointments yet</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-50">
+                  {recentAppointments.map((apt) => (
+                    <div
+                      key={apt._id}
+                      className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50/50 transition-colors"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#8B2635] to-[#d4af37] flex items-center justify-center flex-shrink-0 shadow-sm">
+                        <span
+                          className="text-white text-sm font-semibold"
+                          style={{ fontFamily: "Playfair Display, serif" }}
+                        >
+                          {apt.name?.charAt(0)}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {apt.name}
+                        </p>
+                        <p className="text-xs text-gray-400 truncate">
+                          {apt.appointmentType} · {formatDate(apt.date)}
+                        </p>
                       </div>
                       {getStatusBadge(apt.status)}
                     </div>
-                    <p className="text-xs text-gray-500 ml-13 pl-[52px]">
-                      {formatDate(apt.date)} {apt.time ? `at ${apt.time}` : ""}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
-        {/* Recent Mass Bookings */}
-        <Card className="border-0 shadow-md">
-          <CardHeader className="border-b bg-gray-50 flex flex-row items-center justify-between">
-            <CardTitle
-              className="text-[#1e3a5f]"
-              style={{ fontFamily: "Playfair Display, serif" }}
-            >
-              Recent Mass Bookings
-            </CardTitle>
-            <a
-              href="/admin/mass-bookings"
-              className="text-sm text-[#8B2635] hover:underline"
-            >
-              View all
-            </a>
+        {/* Activity Feed — 1 col */}
+        <div>
+          <Card className="border-0 shadow-sm rounded-2xl overflow-hidden h-full">
+            <CardHeader className="border-b border-gray-50 bg-white px-6 py-4">
+              <div className="flex items-center justify-between">
+                <CardTitle
+                  className="text-[#1e3a5f] text-base"
+                  style={{ fontFamily: "Playfair Display, serif" }}
+                >
+                  Live Activity
+                </CardTitle>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-xs text-gray-400">Live</span>
+                </span>
+              </div>
+            </CardHeader>
+            <CardContent className="p-4">
+              {activityFeed.length === 0 ? (
+                <p className="text-center text-sm text-gray-400 py-8">
+                  No recent activity
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {activityFeed.map((item, i) => {
+                    const Icon = item.icon;
+                    return (
+                      <div
+                        key={i}
+                        className="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                      >
+                        <div
+                          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
+                          style={{ background: item.color + "18" }}
+                        >
+                          <Icon
+                            className="w-4 h-4"
+                            style={{ color: item.color }}
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-gray-800 leading-snug">
+                            {item.text}
+                          </p>
+                          <p className="text-xs text-gray-400 truncate mt-0.5">
+                            {item.sub}
+                          </p>
+                          <p className="text-[10px] text-gray-300 mt-1">
+                            {timeAgo(item.date)}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* ── Second Row ───────────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Mass Bookings */}
+        <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
+          <CardHeader className="border-b border-gray-50 bg-white px-6 py-4">
+            <div className="flex items-center justify-between">
+              <CardTitle
+                className="text-[#1e3a5f] text-base"
+                style={{ fontFamily: "Playfair Display, serif" }}
+              >
+                Mass Bookings
+              </CardTitle>
+              <Link
+                to="/admin/mass-bookings"
+                className="flex items-center gap-1 text-xs text-[#8B2635] hover:underline font-medium"
+              >
+                View all <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             {thankLoading ? (
               <div className="p-4 space-y-3">
                 {[...Array(3)].map((_, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <Skeleton className="w-10 h-10 rounded-full" />
-                    <div className="flex-1 space-y-1.5">
-                      <Skeleton className="h-3 w-32" />
-                      <Skeleton className="h-3 w-20" />
-                    </div>
-                    <Skeleton className="h-6 w-16 rounded-full" />
-                  </div>
+                  <Skeleton key={i} className="h-14 w-full" />
                 ))}
               </div>
             ) : recentThanksgivings.length === 0 ? (
-              <p className="p-6 text-center text-sm text-gray-400">
-                No bookings yet
-              </p>
+              <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                <CalendarCheck className="w-8 h-8 mb-2 text-gray-200" />
+                <p className="text-sm">No bookings yet</p>
+              </div>
             ) : (
-              <div className="divide-y divide-gray-200">
-                {recentThanksgivings.map((booking) => (
+              <div className="divide-y divide-gray-50">
+                {recentThanksgivings.map((b) => (
                   <div
-                    key={booking._id}
-                    className="p-4 hover:bg-gray-50 transition-colors"
+                    key={b._id}
+                    className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50/50 transition-colors"
                   >
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#1e3a5f] to-[#8B2635] flex items-center justify-center flex-shrink-0">
-                          <span
-                            className="text-white text-sm"
-                            style={{ fontFamily: "Playfair Display, serif" }}
-                          >
-                            {booking.name?.charAt(0)}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">
-                            {booking.name}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {booking.mass?.name || "Mass Booking"}
-                          </p>
-                        </div>
-                      </div>
-                      {getStatusBadge(booking.status)}
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#1e3a5f] to-[#8B2635] flex items-center justify-center flex-shrink-0">
+                      <span className="text-white text-xs font-semibold">
+                        {b.name?.charAt(0)}
+                      </span>
                     </div>
-                    <p className="text-xs text-gray-500 pl-[52px]">
-                      {formatDate(booking.createdAt)}
-                    </p>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {b.name}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {formatDate(b.createdAt)}
+                      </p>
+                    </div>
+                    {getStatusBadge(b.status)}
                   </div>
                 ))}
               </div>
             )}
           </CardContent>
         </Card>
-      </div>
 
-      {/* Three Column: Events + Reviews + Priests */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Upcoming Events */}
-        <Card className="border-0 shadow-md">
-          <CardHeader className="border-b bg-gray-50 flex flex-row items-center justify-between">
-            <CardTitle
-              className="text-[#1e3a5f]"
-              style={{ fontFamily: "Playfair Display, serif" }}
-            >
-              Upcoming Events
-            </CardTitle>
-            <a
-              href="/admin/events"
-              className="text-sm text-[#8B2635] hover:underline"
-            >
-              View all
-            </a>
+        <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
+          <CardHeader className="border-b border-gray-50 bg-white px-6 py-4">
+            <div className="flex items-center justify-between">
+              <CardTitle
+                className="text-[#1e3a5f] text-base"
+                style={{ fontFamily: "Playfair Display, serif" }}
+              >
+                Upcoming Events
+              </CardTitle>
+              <Link
+                to="/admin/events"
+                className="flex items-center gap-1 text-xs text-[#8B2635] hover:underline font-medium"
+              >
+                View all <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
           </CardHeader>
           <CardContent className="p-4 space-y-3">
             {eventsLoading ? (
               [...Array(3)].map((_, i) => (
-                <Skeleton key={i} className="h-20 w-full rounded-lg" />
+                <Skeleton key={i} className="h-16 w-full" />
               ))
             ) : upcomingEvents.length === 0 ? (
-              <p className="text-center text-sm text-gray-400 py-4">
-                No upcoming events
-              </p>
+              <div className="flex flex-col items-center justify-center py-10 text-gray-400">
+                <PartyPopper className="w-8 h-8 mb-2 text-gray-200" />
+                <p className="text-sm">No upcoming events</p>
+              </div>
             ) : (
               upcomingEvents.map((event) => (
-                <div key={event._id} className="p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-start justify-between mb-2">
-                    <h4 className="text-sm font-medium text-gray-900 flex-1 line-clamp-1">
-                      {event.title}
-                    </h4>
-                    <Badge
-                      className={`${getCategoryColor(event.category)} text-xs ml-2 flex-shrink-0`}
-                    >
-                      {event.category}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-gray-600 mb-2">
-                    {formatDate(event.date)}
-                  </p>
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span>
-                      {event.attendees || 0} / {event.maxAttendees}
-                    </span>
-                    <div className="w-16 bg-gray-200 rounded-full h-1.5">
-                      <div
-                        className="bg-[#8B2635] h-1.5 rounded-full"
-                        style={{
-                          width: `${Math.min(((event.attendees || 0) / event.maxAttendees) * 100, 100)}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Recent Reviews */}
-        <Card className="border-0 shadow-md">
-          <CardHeader className="border-b bg-gray-50 flex flex-row items-center justify-between">
-            <CardTitle
-              className="text-[#1e3a5f]"
-              style={{ fontFamily: "Playfair Display, serif" }}
-            >
-              Recent Reviews
-            </CardTitle>
-            <a
-              href="/admin/reviews"
-              className="text-sm text-[#8B2635] hover:underline"
-            >
-              View all
-            </a>
-          </CardHeader>
-          <CardContent className="p-4 space-y-3">
-            {reviewsLoading ? (
-              [...Array(3)].map((_, i) => (
-                <Skeleton key={i} className="h-20 w-full rounded-lg" />
-              ))
-            ) : recentReviews.length === 0 ? (
-              <p className="text-center text-sm text-gray-400 py-4">
-                No reviews yet
-              </p>
-            ) : (
-              recentReviews.map((review) => (
-                <div key={review._id} className="p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#8B2635] to-[#d4af37] flex items-center justify-center flex-shrink-0">
-                        <span
-                          className="text-white text-xs"
-                          style={{ fontFamily: "Playfair Display, serif" }}
-                        >
-                          {review.name?.charAt(0)}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">
-                          {review.name}
-                        </p>
-                        {renderStars(review.rating)}
-                      </div>
-                    </div>
-                    {getStatusBadge(review.status)}
-                  </div>
-                  <p className="text-xs text-gray-700 mt-1 line-clamp-2">
-                    {review.message}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    {formatDate(review.createdAt)}
-                  </p>
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Priest Availability — live from Redux */}
-        <Card className="border-0 shadow-md">
-          <CardHeader className="border-b bg-gray-50">
-            <CardTitle
-              className="text-[#1e3a5f]"
-              style={{ fontFamily: "Playfair Display, serif" }}
-            >
-              Priest Availability
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 space-y-3">
-            {priestsLoading ? (
-              [...Array(3)].map((_, i) => (
                 <div
-                  key={i}
-                  className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
+                  key={event._id}
+                  className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100/70 transition-colors"
                 >
+                  <div className="w-10 h-10 rounded-lg bg-[#8B2635]/10 flex flex-col items-center justify-center flex-shrink-0">
+                    <span className="text-[10px] font-bold text-[#8B2635] uppercase leading-none">
+                      {new Date(event.date).toLocaleDateString("en-US", {
+                        month: "short",
+                      })}
+                    </span>
+                    <span className="text-sm font-bold text-[#8B2635] leading-none">
+                      {new Date(event.date).getDate()}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {event.title}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge
+                        className={`${getCategoryColor(event.category)} text-[10px] px-1.5 py-0`}
+                      >
+                        {event.category}
+                      </Badge>
+                      <span className="text-xs text-gray-400">
+                        {event.attendees || 0}/{event.maxAttendees}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Priest Availability */}
+        <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
+          <CardHeader className="border-b border-gray-50 bg-white px-6 py-4">
+            <div className="flex items-center justify-between">
+              <CardTitle
+                className="text-[#1e3a5f] text-base"
+                style={{ fontFamily: "Playfair Display, serif" }}
+              >
+                Priest Availability
+              </CardTitle>
+              <span className="text-xs text-gray-400">
+                {activePriests} active
+              </span>
+            </div>
+          </CardHeader>
+          <CardContent className="p-4 space-y-2">
+            {priestsLoading ? (
+              [...Array(4)].map((_, i) => (
+                <div key={i} className="flex items-center gap-3 p-2">
                   <Skeleton className="w-10 h-10 rounded-full" />
                   <div className="flex-1 space-y-1.5">
                     <Skeleton className="h-3 w-28" />
                     <Skeleton className="h-3 w-16" />
                   </div>
-                  <Skeleton className="w-3 h-3 rounded-full" />
                 </div>
               ))
             ) : adminPriests.filter((p) => p.isActive).length === 0 ? (
-              <p className="text-center text-sm text-gray-400 py-4">
-                No active priests
-              </p>
+              <div className="flex flex-col items-center justify-center py-10 text-gray-400">
+                <Users className="w-8 h-8 mb-2 text-gray-200" />
+                <p className="text-sm">No active priests</p>
+              </div>
             ) : (
               adminPriests
                 .filter((p) => p.isActive)
@@ -761,21 +673,18 @@ export function AdminDashboardPage() {
                 .map((priest) => (
                   <div
                     key={priest._id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    className="flex items-center justify-between p-2.5 rounded-xl hover:bg-gray-50 transition-colors"
                   >
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center gap-3">
                       {priest.photo ? (
                         <img
                           src={priest.photo}
                           alt={priest.name}
-                          className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                          className="w-10 h-10 rounded-full object-cover flex-shrink-0 ring-2 ring-gray-100"
                         />
                       ) : (
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#1e3a5f] to-[#8B2635] flex items-center justify-center flex-shrink-0">
-                          <span
-                            className="text-white text-sm"
-                            style={{ fontFamily: "Playfair Display, serif" }}
-                          >
+                          <span className="text-white text-xs font-semibold">
                             {priest.name
                               .split(" ")
                               .map((n) => n[0])
@@ -788,11 +697,11 @@ export function AdminDashboardPage() {
                         <p className="text-sm font-medium text-gray-900">
                           {priest.name}
                         </p>
-                        <p className="text-xs text-gray-500">{priest.status}</p>
+                        <p className="text-xs text-gray-400">{priest.status}</p>
                       </div>
                     </div>
                     <div
-                      className={`w-3 h-3 rounded-full flex-shrink-0 ${statusDot(priest.status)}`}
+                      className={`w-2.5 h-2.5 rounded-full ${statusDot(priest.status)} ring-2 ring-white shadow-sm`}
                     />
                   </div>
                 ))
@@ -801,40 +710,129 @@ export function AdminDashboardPage() {
         </Card>
       </div>
 
-      {/* Activity Feed — derived from real Redux data */}
-      <Card className="border-0 shadow-md">
-        <CardHeader className="border-b bg-gray-50">
-          <CardTitle
-            className="text-[#1e3a5f]"
-            style={{ fontFamily: "Playfair Display, serif" }}
-          >
-            Recent Activity
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          {activityFeed.length === 0 ? (
-            <p className="text-center text-sm text-gray-400">
-              No recent activity to show
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {activityFeed.map((item, i) => (
-                <div key={i} className="flex items-start space-x-3">
-                  <div
-                    className={`w-2 h-2 mt-2 rounded-full flex-shrink-0 ${item.color}`}
-                  />
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-900">{item.text}</p>
-                    <p className="text-xs text-gray-400">
-                      {timeAgo(item.date)}
+      {/* ── Bottom Row: Reviews + Contacts ───────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Reviews */}
+        <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
+          <CardHeader className="border-b border-gray-50 bg-white px-6 py-4">
+            <div className="flex items-center justify-between">
+              <CardTitle
+                className="text-[#1e3a5f] text-base"
+                style={{ fontFamily: "Playfair Display, serif" }}
+              >
+                Recent Reviews
+              </CardTitle>
+              <Link
+                to="/admin/reviews"
+                className="flex items-center gap-1 text-xs text-[#8B2635] hover:underline font-medium"
+              >
+                View all <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
+          </CardHeader>
+          <CardContent className="p-4 space-y-3">
+            {reviewsLoading ? (
+              [...Array(3)].map((_, i) => (
+                <Skeleton key={i} className="h-16 w-full" />
+              ))
+            ) : recentReviews.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-gray-400">
+                <MessageSquare className="w-8 h-8 mb-2 text-gray-200" />
+                <p className="text-sm">No reviews yet</p>
+              </div>
+            ) : (
+              recentReviews.map((review) => (
+                <div
+                  key={review._id}
+                  className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100/70 transition-colors"
+                >
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#8B2635] to-[#d4af37] flex items-center justify-center flex-shrink-0">
+                    <span className="text-white text-xs font-semibold">
+                      {review.name?.charAt(0)}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <p className="text-sm font-medium text-gray-900">
+                        {review.name}
+                      </p>
+                      {getStatusBadge(review.status)}
+                    </div>
+                    <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">
+                      {review.message}
+                    </p>
+                    <p className="text-[10px] text-gray-300 mt-1">
+                      {formatDate(review.createdAt)}
                     </p>
                   </div>
                 </div>
-              ))}
+              ))
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Unread Contacts */}
+        <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
+          <CardHeader className="border-b border-gray-50 bg-white px-6 py-4">
+            <div className="flex items-center justify-between">
+              <CardTitle
+                className="text-[#1e3a5f] text-base"
+                style={{ fontFamily: "Playfair Display, serif" }}
+              >
+                Unread Messages
+              </CardTitle>
+              <Link
+                to="/admin/contacts"
+                className="flex items-center gap-1 text-xs text-[#8B2635] hover:underline font-medium"
+              >
+                View all <ArrowRight className="w-3 h-3" />
+              </Link>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent className="p-4 space-y-3">
+            {contactsLoading ? (
+              [...Array(3)].map((_, i) => (
+                <Skeleton key={i} className="h-16 w-full" />
+              ))
+            ) : adminContacts.filter((c) => c.status === "unread").length ===
+              0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-gray-400">
+                <Mail className="w-8 h-8 mb-2 text-gray-200" />
+                <p className="text-sm">No unread messages</p>
+              </div>
+            ) : (
+              adminContacts
+                .filter((c) => c.status === "unread")
+                .slice(0, 4)
+                .map((contact) => (
+                  <div
+                    key={contact._id}
+                    className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100/70 transition-colors"
+                  >
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#1e3a5f] to-[#2d5286] flex items-center justify-center flex-shrink-0">
+                      <span className="text-white text-xs font-semibold">
+                        {contact.name?.charAt(0)}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-0.5">
+                        <p className="text-sm font-medium text-gray-900">
+                          {contact.name}
+                        </p>
+                        <span className="text-[10px] text-gray-400">
+                          {timeAgo(contact.createdAt)}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 truncate">
+                        {contact.subject || contact.email}
+                      </p>
+                    </div>
+                  </div>
+                ))
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

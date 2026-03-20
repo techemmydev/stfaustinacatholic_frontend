@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Play, ArrowRight } from "lucide-react";
-
+import video from "../assets/videos/Red inspirational Quotes video.mp4";
 const AboutusMedia = () => {
   return (
     <section
@@ -43,9 +43,9 @@ const AboutusMedia = () => {
             >
               <video
                 className="w-full h-full object-cover"
-                src="/path-to-your-video.mp4"
+                src={video}
                 controls
-                autoPlay={false}
+                autoPlay={true}
                 muted
                 loop
               />

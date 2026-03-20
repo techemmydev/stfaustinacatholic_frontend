@@ -126,7 +126,7 @@ export function LockScreen() {
           className="text-xs tracking-[0.35em] uppercase mb-6"
           style={{ color: "#c9a84c", fontFamily: "sans-serif" }}
         >
-          St. Faustina · Catholic Parish
+          SS Peter & Paul Catholic Church | Lagos, Nigeria
         </p>
 
         <p

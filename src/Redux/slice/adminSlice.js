@@ -57,7 +57,9 @@ export const getCurrentAdmin = createAsyncThunk(
   "admin/getCurrent",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${API_URL}/me`);
+      const response = await axios.get(`${API_URL}/me`, {
+        withCredentials: true,
+      });
       return response.data;
     } catch (error) {
       return rejectWithValue(
