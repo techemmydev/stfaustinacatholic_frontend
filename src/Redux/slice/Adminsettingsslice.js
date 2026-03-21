@@ -3,29 +3,30 @@ import {
   createAsyncThunk,
   createSelector,
 } from "@reduxjs/toolkit";
+import axios from "axios";
 
-// Auth is cookie-based (adminToken cookie set at login)
-// so we just need credentials: "include" — no Authorization header needed
 const API = import.meta.env.VITE_API_URLA;
 
-const fetchOpts = (method = "GET", body) => ({
-  method,
-  credentials: "include", // sends the adminToken cookie automatically
-  headers: { "Content-Type": "application/json" },
-  ...(body ? { body: JSON.stringify(body) } : {}),
-});
+// ── Auth header helper ─────────────────────────────────────────
+const authHeader = () => {
+  const token = localStorage.getItem("adminToken");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
 
 // ── Fetch admin profile ────────────────────────────────────────
 export const fetchAdminProfile = createAsyncThunk(
   "adminSettings/fetchProfile",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await fetch(`${API}/profile`, fetchOpts("GET"));
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to fetch profile");
+      const { data } = await axios.get(`${API}/profile`, {
+        withCredentials: true,
+        headers: authHeader(),
+      });
       return data;
     } catch (err) {
-      return rejectWithValue(err.message);
+      return rejectWithValue(
+        err.response?.data?.message || "Failed to fetch profile",
+      );
     }
   },
 );
@@ -35,12 +36,13 @@ export const updateAdminProfile = createAsyncThunk(
   "adminSettings/updateProfile",
   async (payload, { rejectWithValue }) => {
     try {
-      const res = await fetch(`${API}/profile`, fetchOpts("PUT", payload));
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Update failed");
+      const { data } = await axios.put(`${API}/profile`, payload, {
+        withCredentials: true,
+        headers: authHeader(),
+      });
       return data;
     } catch (err) {
-      return rejectWithValue(err.message);
+      return rejectWithValue(err.response?.data?.message || "Update failed");
     }
   },
 );
@@ -50,12 +52,15 @@ export const updateAdminPassword = createAsyncThunk(
   "adminSettings/updatePassword",
   async (payload, { rejectWithValue }) => {
     try {
-      const res = await fetch(`${API}/password`, fetchOpts("PUT", payload));
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Password update failed");
+      const { data } = await axios.put(`${API}/password`, payload, {
+        withCredentials: true,
+        headers: authHeader(),
+      });
       return data;
     } catch (err) {
-      return rejectWithValue(err.message);
+      return rejectWithValue(
+        err.response?.data?.message || "Password update failed",
+      );
     }
   },
 );
@@ -117,8 +122,6 @@ const adminSettingsSlice = createSlice({
 });
 
 // ── Notification selector ──────────────────────────────────────
-// Derives live pending counts from all existing slices — zero extra API calls
-// ── Notification selector ──────────────────────────────────────
 export const selectNotifications = createSelector(
   (state) => state.appointment?.adminAppointments,
   (state) => state.thanksgiving?.adminThanksgivings,
@@ -126,7 +129,7 @@ export const selectNotifications = createSelector(
   (state) => state.contact?.adminContacts,
   (state) => state.donation?.adminDonations,
   (state) => state.parishRegister?.parishioners,
-  (state) => state.adminSettings?.profile?.notifications, // ✅ correct path
+  (state) => state.adminSettings?.profile?.notifications,
 
   (
     adminAppointments,
@@ -139,7 +142,6 @@ export const selectNotifications = createSelector(
   ) => {
     const items = [];
 
-    // ── Appointments ───────────────────────────────────────────
     const pendingApts = (adminAppointments || []).filter(
       (a) => a.status === "pending",
     );
@@ -162,7 +164,6 @@ export const selectNotifications = createSelector(
         link: "/admin/appointments",
       });
 
-    // ── Mass bookings ──────────────────────────────────────────
     const pendingBooks = (adminThanksgivings || []).filter(
       (t) => t.status === "pending",
     );
@@ -176,7 +177,6 @@ export const selectNotifications = createSelector(
       }),
     );
 
-    // ── Testimonials ───────────────────────────────────────────
     const pendingRevs = (adminTestimonials || []).filter(
       (r) => r.status === "pending",
     );
@@ -190,7 +190,6 @@ export const selectNotifications = createSelector(
       }),
     );
 
-    // ── Contacts ───────────────────────────────────────────────
     const unreadMsgs = (adminContacts || []).filter(
       (c) => c.status === "unread",
     );
@@ -205,7 +204,6 @@ export const selectNotifications = createSelector(
       }),
     );
 
-    // ── Donations ──────────────────────────────────────────────
     const pendingDonations = (adminDonations || []).filter(
       (d) => d.status === "pending",
     );
@@ -220,9 +218,6 @@ export const selectNotifications = createSelector(
       }),
     );
 
-    // ── Parishioner registrations ──────────────────────────────
-    // parishRegister has no "pending" status — notify on new registrations
-    // Show the 2 most recent ones added in the last 48 hours
     const cutoff = Date.now() - 48 * 60 * 60 * 1000;
     const newParishioners = (parishioners || []).filter(
       (p) => new Date(p.createdAt).getTime() > cutoff,
@@ -231,15 +226,13 @@ export const selectNotifications = createSelector(
       items.push({
         id: `parish-${p._id}`,
         color: "bg-indigo-500",
-        message: `New parishioner registered `,
+        message: `New parishioner registered`,
         sub: p.email,
         date: p.createdAt,
         link: "/admin/parishioners",
       }),
     );
 
-    // ── System config warning ──────────────────────────────────
-    // notifications lives directly on profile, not under systemConfig
     if (notifications && notifications.emailNotifications === false) {
       items.push({
         id: "notif-email-off",
@@ -265,8 +258,6 @@ export const selectNotifications = createSelector(
     };
   },
 );
+
 export const { clearSettingsError } = adminSettingsSlice.actions;
 export default adminSettingsSlice.reducer;
-
-// ── Register in Redux store ────────────────────────────────────
-// adminSettings: adminSettingsReducer

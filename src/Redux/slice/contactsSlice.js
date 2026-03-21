@@ -4,7 +4,13 @@ import axios from "axios";
 const API_URL = import.meta.env.VITE_API_URL;
 const ADMIN_API_URL = import.meta.env.VITE_API_URLA;
 
-// ── Public ──────────────────────────────────────────────────────────────────
+// ── Auth header helper ─────────────────────────────────────────
+const authHeader = () => {
+  const token = localStorage.getItem("adminToken");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+// ── Public ──────────────────────────────────────────────────────
 
 export const submitContactForm = createAsyncThunk(
   "contact/submit",
@@ -22,15 +28,15 @@ export const submitContactForm = createAsyncThunk(
   },
 );
 
-// ── Admin ───────────────────────────────────────────────────────────────────
+// ── Admin ───────────────────────────────────────────────────────
 
 export const fetchAllContactsAdmin = createAsyncThunk(
   "contact/fetchAll",
   async (_, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem("token");
       const response = await axios.get(`${ADMIN_API_URL}/contact`, {
-        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
+        headers: authHeader(),
       });
       return response.data;
     } catch (error) {
@@ -45,11 +51,13 @@ export const markContactAsRead = createAsyncThunk(
   "contact/markAsRead",
   async (id, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem("token");
       const response = await axios.patch(
         `${ADMIN_API_URL}/contact/${id}/read`,
         {},
-        { headers: { Authorization: `Bearer ${token}` } },
+        {
+          withCredentials: true,
+          headers: authHeader(),
+        },
       );
       return response.data;
     } catch (error) {
@@ -64,11 +72,13 @@ export const markContactAsResponded = createAsyncThunk(
   "contact/markAsResponded",
   async (id, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem("token");
       const response = await axios.patch(
         `${ADMIN_API_URL}/contact/${id}/responded`,
         {},
-        { headers: { Authorization: `Bearer ${token}` } },
+        {
+          withCredentials: true,
+          headers: authHeader(),
+        },
       );
       return response.data;
     } catch (error) {
@@ -83,9 +93,9 @@ export const deleteContact = createAsyncThunk(
   "contact/delete",
   async (id, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem("token");
       await axios.delete(`${ADMIN_API_URL}/contact/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
+        headers: authHeader(),
       });
       return id;
     } catch (error) {
@@ -96,16 +106,14 @@ export const deleteContact = createAsyncThunk(
   },
 );
 
-// ── Slice ────────────────────────────────────────────────────────────────────
+// ── Slice ────────────────────────────────────────────────────────
 
 const contactsSlice = createSlice({
   name: "contact",
   initialState: {
-    // public
     loading: false,
     success: false,
     error: null,
-    // admin
     adminContacts: [],
     adminLoading: false,
     adminError: null,
@@ -120,7 +128,6 @@ const contactsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // submit
       .addCase(submitContactForm.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -134,7 +141,6 @@ const contactsSlice = createSlice({
         state.error = action.payload;
       })
 
-      // fetch all (admin)
       .addCase(fetchAllContactsAdmin.pending, (state) => {
         state.adminLoading = true;
         state.adminError = null;
@@ -148,7 +154,6 @@ const contactsSlice = createSlice({
         state.adminError = action.payload;
       })
 
-      // mark as read
       .addCase(markContactAsRead.pending, (state) => {
         state.actionLoading = true;
       })
@@ -163,7 +168,6 @@ const contactsSlice = createSlice({
         state.actionLoading = false;
       })
 
-      // mark as responded
       .addCase(markContactAsResponded.pending, (state) => {
         state.actionLoading = true;
       })
@@ -178,7 +182,6 @@ const contactsSlice = createSlice({
         state.actionLoading = false;
       })
 
-      // delete
       .addCase(deleteContact.pending, (state) => {
         state.actionLoading = true;
       })

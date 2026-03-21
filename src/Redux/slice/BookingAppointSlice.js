@@ -2,7 +2,14 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_URL;
-const ADMIN_API_URL = import.meta.env.VITE_API_URLA; // For admin endpoints
+const ADMIN_API_URL = import.meta.env.VITE_API_URLA;
+
+// ── Auth header helper ─────────────────────────────────────────
+const authHeader = () => {
+  const token = localStorage.getItem("adminToken");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 // ─────────────────────────────────────────────────────────────
 // PUBLIC THUNKS
 // ─────────────────────────────────────────────────────────────
@@ -49,6 +56,7 @@ export const fetchAllAppointmentsAdmin = createAsyncThunk(
     try {
       const response = await axios.get(`${ADMIN_API_URL}/appointments`, {
         withCredentials: true,
+        headers: authHeader(),
       });
       return response.data;
     } catch (error) {
@@ -66,7 +74,10 @@ export const approveAppointment = createAsyncThunk(
       const response = await axios.patch(
         `${ADMIN_API_URL}/appointments/${id}/approve`,
         {},
-        { withCredentials: true },
+        {
+          withCredentials: true,
+          headers: authHeader(),
+        },
       );
       return response.data;
     } catch (error) {
@@ -84,7 +95,10 @@ export const rejectAppointment = createAsyncThunk(
       const response = await axios.patch(
         `${ADMIN_API_URL}/appointments/${id}/reject`,
         {},
-        { withCredentials: true },
+        {
+          withCredentials: true,
+          headers: authHeader(),
+        },
       );
       return response.data;
     } catch (error) {
@@ -101,6 +115,7 @@ export const deleteAppointment = createAsyncThunk(
     try {
       await axios.delete(`${ADMIN_API_URL}/appointments/${id}`, {
         withCredentials: true,
+        headers: authHeader(),
       });
       return id;
     } catch (error) {
@@ -118,7 +133,6 @@ export const deleteAppointment = createAsyncThunk(
 const appointmentSlice = createSlice({
   name: "appointment",
   initialState: {
-    // Public booking
     loading: false,
     success: false,
     error: null,
@@ -126,7 +140,6 @@ const appointmentSlice = createSlice({
     availableSlots: [],
     slotsLoading: false,
     slotsError: null,
-    // Admin
     adminAppointments: [],
     adminLoading: false,
     adminError: null,
@@ -144,7 +157,6 @@ const appointmentSlice = createSlice({
 
   extraReducers: (builder) => {
     builder
-      // ── Fetch Available Slots ──
       .addCase(fetchAvailableSlots.pending, (state) => {
         state.slotsLoading = true;
         state.slotsError = null;
@@ -159,7 +171,6 @@ const appointmentSlice = createSlice({
         state.availableSlots = [];
       })
 
-      // ── Create Appointment (public) ──
       .addCase(createAppointment.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -174,7 +185,6 @@ const appointmentSlice = createSlice({
         state.error = action.payload;
       })
 
-      // ── Fetch All Admin ──
       .addCase(fetchAllAppointmentsAdmin.pending, (state) => {
         state.adminLoading = true;
         state.adminError = null;
@@ -188,7 +198,6 @@ const appointmentSlice = createSlice({
         state.adminError = action.payload;
       })
 
-      // ── Approve ──
       .addCase(approveAppointment.pending, (state) => {
         state.actionLoading = true;
       })
@@ -203,7 +212,6 @@ const appointmentSlice = createSlice({
         state.actionLoading = false;
       })
 
-      // ── Reject ──
       .addCase(rejectAppointment.pending, (state) => {
         state.actionLoading = true;
       })
@@ -218,7 +226,6 @@ const appointmentSlice = createSlice({
         state.actionLoading = false;
       })
 
-      // ── Delete ──
       .addCase(deleteAppointment.pending, (state) => {
         state.actionLoading = true;
       })

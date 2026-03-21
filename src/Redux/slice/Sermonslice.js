@@ -4,9 +4,11 @@ import axios from "axios";
 const API_URL = import.meta.env.VITE_API_URL;
 const ADMIN_API_URL = import.meta.env.VITE_API_URLA;
 
-const authHeader = () => ({
-  Authorization: `Bearer ${localStorage.getItem("token")}`,
-});
+// ── Auth header helper ─────────────────────────────────────────
+const authHeader = () => {
+  const token = localStorage.getItem("adminToken");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
 
 // ═══════════════════════════════════════════════════════
 //  SERMON THUNKS
@@ -31,6 +33,7 @@ export const fetchSermonsAdmin = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const res = await axios.get(`${ADMIN_API_URL}/sermons`, {
+        withCredentials: true,
         headers: authHeader(),
       });
       return res.data;
@@ -47,6 +50,7 @@ export const createSermon = createAsyncThunk(
   async (data, { rejectWithValue }) => {
     try {
       const res = await axios.post(`${ADMIN_API_URL}/sermons`, data, {
+        withCredentials: true,
         headers: authHeader(),
       });
       return res.data;
@@ -63,6 +67,7 @@ export const updateSermon = createAsyncThunk(
   async ({ id, data }, { rejectWithValue }) => {
     try {
       const res = await axios.put(`${ADMIN_API_URL}/sermons/${id}`, data, {
+        withCredentials: true,
         headers: authHeader(),
       });
       return res.data;
@@ -81,7 +86,10 @@ export const toggleSermonPublished = createAsyncThunk(
       const res = await axios.patch(
         `${ADMIN_API_URL}/sermons/${id}/toggle`,
         {},
-        { headers: authHeader() },
+        {
+          withCredentials: true,
+          headers: authHeader(),
+        },
       );
       return res.data;
     } catch (err) {
@@ -97,6 +105,7 @@ export const deleteSermon = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       await axios.delete(`${ADMIN_API_URL}/sermons/${id}`, {
+        withCredentials: true,
         headers: authHeader(),
       });
       return id;
@@ -131,6 +140,7 @@ export const fetchPhotosAdmin = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const res = await axios.get(`${ADMIN_API_URL}/gallery`, {
+        withCredentials: true,
         headers: authHeader(),
       });
       return res.data;
@@ -147,6 +157,7 @@ export const createPhoto = createAsyncThunk(
   async (data, { rejectWithValue }) => {
     try {
       const res = await axios.post(`${ADMIN_API_URL}/gallery`, data, {
+        withCredentials: true,
         headers: authHeader(),
       });
       return res.data;
@@ -163,6 +174,7 @@ export const updatePhoto = createAsyncThunk(
   async ({ id, data }, { rejectWithValue }) => {
     try {
       const res = await axios.put(`${ADMIN_API_URL}/gallery/${id}`, data, {
+        withCredentials: true,
         headers: authHeader(),
       });
       return res.data;
@@ -181,7 +193,10 @@ export const togglePhotoPublished = createAsyncThunk(
       const res = await axios.patch(
         `${ADMIN_API_URL}/gallery/${id}/toggle`,
         {},
-        { headers: authHeader() },
+        {
+          withCredentials: true,
+          headers: authHeader(),
+        },
       );
       return res.data;
     } catch (err) {
@@ -197,6 +212,7 @@ export const deletePhoto = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       await axios.delete(`${ADMIN_API_URL}/gallery/${id}`, {
+        withCredentials: true,
         headers: authHeader(),
       });
       return id;
@@ -215,23 +231,18 @@ export const deletePhoto = createAsyncThunk(
 const sermonSlice = createSlice({
   name: "sermon",
   initialState: {
-    // public
     sermons: [],
     photos: [],
     publicLoading: false,
     publicError: null,
-    // admin sermons
     adminSermons: [],
     adminSermonsLoading: false,
-    // admin gallery
     adminPhotos: [],
     adminPhotosLoading: false,
-    // shared action loading
     actionLoading: false,
   },
   reducers: {},
   extraReducers: (builder) => {
-    // ── public sermons ─────────────────────────────────
     builder
       .addCase(fetchSermons.pending, (state) => {
         state.publicLoading = true;
@@ -245,7 +256,6 @@ const sermonSlice = createSlice({
         state.publicError = action.payload;
       })
 
-      // ── public photos ──────────────────────────────────
       .addCase(fetchPhotos.pending, (state) => {
         state.publicLoading = true;
       })
@@ -258,7 +268,6 @@ const sermonSlice = createSlice({
         state.publicError = action.payload;
       })
 
-      // ── admin sermons ──────────────────────────────────
       .addCase(fetchSermonsAdmin.pending, (state) => {
         state.adminSermonsLoading = true;
       })
@@ -322,7 +331,6 @@ const sermonSlice = createSlice({
         state.actionLoading = false;
       })
 
-      // ── admin gallery ──────────────────────────────────
       .addCase(fetchPhotosAdmin.pending, (state) => {
         state.adminPhotosLoading = true;
       })
