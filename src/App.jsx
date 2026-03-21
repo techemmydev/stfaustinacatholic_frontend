@@ -2,6 +2,7 @@ import "./App.css";
 import { useEffect } from "react";
 import Layout from "./layout/Layout";
 import { Routes, Route } from "react-router-dom";
+
 import HomePage from "./pages/HomePage";
 import AboutPage from "./pages/AboutPage";
 import { ContactPage } from "./pages/ContactPage";
@@ -43,9 +44,15 @@ import { AdminMassManagement } from "./Adminpages/Adminmassmanagement";
 import { AdminContactPage } from "./Adminpages/Admincontactpage";
 import { AdminSermonsPage } from "./Adminpages/Adminsermonspage";
 import { AdminDonationsPage } from "./Adminpages/Admindonationspage";
+import { MaintenancePage } from "./UiComponents/Maintenancepage";
 // import { AdminGalleryPage } from "./Adminpages/Admingallerypage";
 
 function App() {
+  // ── Flip this to true when doing maintenance ──
+  const MAINTENANCE_MODE = false;
+  // ← add this line right at the top of the function, before everything else
+  if (MAINTENANCE_MODE) return <MaintenancePage />;
+
   const dispatch = useDispatch();
   useInactivity(); // starts the inactivity timer
   // const { isLocked } = useSelector((state) => state.lock);

@@ -4,14 +4,18 @@ import axios from "axios";
 const API_URL = import.meta.env.VITE_API_URL;
 const ADMIN_API_URL = import.meta.env.VITE_API_URLA;
 
-const authHeader = () => ({
-  Authorization: `Bearer ${localStorage.getItem("token")}`,
-});
+// ── Auth header helper ─────────────────────────────────────────
+// Reads adminToken (not "token") — must match what adminSlice saves
+const authHeader = () => {
+  const token = localStorage.getItem("adminToken");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
 
 // ═══════════════════════════════════════════════════════
 //  THUNKS
 // ═══════════════════════════════════════════════════════
 
+// ── Public ────────────────────────────────────────────────────
 export const fetchPriests = createAsyncThunk(
   "priest/fetchPublic",
   async (_, { rejectWithValue }) => {
@@ -26,11 +30,13 @@ export const fetchPriests = createAsyncThunk(
   },
 );
 
+// ── Admin: fetch all ──────────────────────────────────────────
 export const fetchPriestsAdmin = createAsyncThunk(
   "priest/fetchAdmin",
   async (_, { rejectWithValue }) => {
     try {
       const res = await axios.get(`${ADMIN_API_URL}/fetchpriests`, {
+        withCredentials: true,
         headers: authHeader(),
       });
       return res.data;
@@ -42,11 +48,13 @@ export const fetchPriestsAdmin = createAsyncThunk(
   },
 );
 
+// ── Admin: create ─────────────────────────────────────────────
 export const createPriest = createAsyncThunk(
   "priest/create",
   async (data, { rejectWithValue }) => {
     try {
       const res = await axios.post(`${ADMIN_API_URL}/createpriest`, data, {
+        withCredentials: true,
         headers: authHeader(),
       });
       return res.data;
@@ -58,11 +66,13 @@ export const createPriest = createAsyncThunk(
   },
 );
 
+// ── Admin: update ─────────────────────────────────────────────
 export const updatePriest = createAsyncThunk(
   "priest/update",
   async ({ id, data }, { rejectWithValue }) => {
     try {
       const res = await axios.put(`${ADMIN_API_URL}/updatepriest/${id}`, data, {
+        withCredentials: true,
         headers: authHeader(),
       });
       return res.data;
@@ -74,6 +84,7 @@ export const updatePriest = createAsyncThunk(
   },
 );
 
+// ── Admin: toggle active ──────────────────────────────────────
 export const togglePriestActive = createAsyncThunk(
   "priest/toggle",
   async (id, { rejectWithValue }) => {
@@ -81,7 +92,10 @@ export const togglePriestActive = createAsyncThunk(
       const res = await axios.patch(
         `${ADMIN_API_URL}/togglepriest/${id}`,
         {},
-        { headers: authHeader() },
+        {
+          withCredentials: true,
+          headers: authHeader(),
+        },
       );
       return res.data;
     } catch (err) {
@@ -92,11 +106,13 @@ export const togglePriestActive = createAsyncThunk(
   },
 );
 
+// ── Admin: delete ─────────────────────────────────────────────
 export const deletePriest = createAsyncThunk(
   "priest/delete",
   async (id, { rejectWithValue }) => {
     try {
       await axios.delete(`${ADMIN_API_URL}/deletepriest/${id}`, {
+        withCredentials: true,
         headers: authHeader(),
       });
       return id;
@@ -121,83 +137,101 @@ const priestSlice = createSlice({
     adminPriests: [], // admin
     adminLoading: false,
     actionLoading: false,
+    error: null,
   },
   reducers: {},
   extraReducers: (builder) => {
     builder
-      // public fetch
-      .addCase(fetchPriests.pending, (s) => {
-        s.publicLoading = true;
+      /* -------- Public fetch -------- */
+      .addCase(fetchPriests.pending, (state) => {
+        state.publicLoading = true;
+        state.publicError = null;
       })
-      .addCase(fetchPriests.fulfilled, (s, a) => {
-        s.publicLoading = false;
-        s.priests = a.payload;
+      .addCase(fetchPriests.fulfilled, (state, action) => {
+        state.publicLoading = false;
+        state.priests = action.payload;
       })
-      .addCase(fetchPriests.rejected, (s, a) => {
-        s.publicLoading = false;
-        s.publicError = a.payload;
-      })
-
-      // admin fetch
-      .addCase(fetchPriestsAdmin.pending, (s) => {
-        s.adminLoading = true;
-      })
-      .addCase(fetchPriestsAdmin.fulfilled, (s, a) => {
-        s.adminLoading = false;
-        s.adminPriests = a.payload;
-      })
-      .addCase(fetchPriestsAdmin.rejected, (s) => {
-        s.adminLoading = false;
+      .addCase(fetchPriests.rejected, (state, action) => {
+        state.publicLoading = false;
+        state.publicError = action.payload;
       })
 
-      // create
-      .addCase(createPriest.pending, (s) => {
-        s.actionLoading = true;
+      /* -------- Admin fetch -------- */
+      .addCase(fetchPriestsAdmin.pending, (state) => {
+        state.adminLoading = true;
+        state.error = null;
       })
-      .addCase(createPriest.fulfilled, (s, a) => {
-        s.actionLoading = false;
-        s.adminPriests.push(a.payload);
+      .addCase(fetchPriestsAdmin.fulfilled, (state, action) => {
+        state.adminLoading = false;
+        state.adminPriests = action.payload;
       })
-      .addCase(createPriest.rejected, (s) => {
-        s.actionLoading = false;
-      })
-
-      // update
-      .addCase(updatePriest.pending, (s) => {
-        s.actionLoading = true;
-      })
-      .addCase(updatePriest.fulfilled, (s, a) => {
-        s.actionLoading = false;
-        const idx = s.adminPriests.findIndex((p) => p._id === a.payload._id);
-        if (idx !== -1) s.adminPriests[idx] = a.payload;
-      })
-      .addCase(updatePriest.rejected, (s) => {
-        s.actionLoading = false;
+      .addCase(fetchPriestsAdmin.rejected, (state, action) => {
+        state.adminLoading = false;
+        state.error = action.payload;
       })
 
-      // toggle
-      .addCase(togglePriestActive.pending, (s) => {
-        s.actionLoading = true;
+      /* -------- Create -------- */
+      .addCase(createPriest.pending, (state) => {
+        state.actionLoading = true;
+        state.error = null;
       })
-      .addCase(togglePriestActive.fulfilled, (s, a) => {
-        s.actionLoading = false;
-        const idx = s.adminPriests.findIndex((p) => p._id === a.payload._id);
-        if (idx !== -1) s.adminPriests[idx] = a.payload;
+      .addCase(createPriest.fulfilled, (state, action) => {
+        state.actionLoading = false;
+        state.adminPriests.push(action.payload);
       })
-      .addCase(togglePriestActive.rejected, (s) => {
-        s.actionLoading = false;
+      .addCase(createPriest.rejected, (state, action) => {
+        state.actionLoading = false;
+        state.error = action.payload;
       })
 
-      // delete
-      .addCase(deletePriest.pending, (s) => {
-        s.actionLoading = true;
+      /* -------- Update -------- */
+      .addCase(updatePriest.pending, (state) => {
+        state.actionLoading = true;
+        state.error = null;
       })
-      .addCase(deletePriest.fulfilled, (s, a) => {
-        s.actionLoading = false;
-        s.adminPriests = s.adminPriests.filter((p) => p._id !== a.payload);
+      .addCase(updatePriest.fulfilled, (state, action) => {
+        state.actionLoading = false;
+        const idx = state.adminPriests.findIndex(
+          (p) => p._id === action.payload._id,
+        );
+        if (idx !== -1) state.adminPriests[idx] = action.payload;
       })
-      .addCase(deletePriest.rejected, (s) => {
-        s.actionLoading = false;
+      .addCase(updatePriest.rejected, (state, action) => {
+        state.actionLoading = false;
+        state.error = action.payload;
+      })
+
+      /* -------- Toggle active -------- */
+      .addCase(togglePriestActive.pending, (state) => {
+        state.actionLoading = true;
+        state.error = null;
+      })
+      .addCase(togglePriestActive.fulfilled, (state, action) => {
+        state.actionLoading = false;
+        const idx = state.adminPriests.findIndex(
+          (p) => p._id === action.payload._id,
+        );
+        if (idx !== -1) state.adminPriests[idx] = action.payload;
+      })
+      .addCase(togglePriestActive.rejected, (state, action) => {
+        state.actionLoading = false;
+        state.error = action.payload;
+      })
+
+      /* -------- Delete -------- */
+      .addCase(deletePriest.pending, (state) => {
+        state.actionLoading = true;
+        state.error = null;
+      })
+      .addCase(deletePriest.fulfilled, (state, action) => {
+        state.actionLoading = false;
+        state.adminPriests = state.adminPriests.filter(
+          (p) => p._id !== action.payload,
+        );
+      })
+      .addCase(deletePriest.rejected, (state, action) => {
+        state.actionLoading = false;
+        state.error = action.payload;
       });
   },
 });
