@@ -4,8 +4,6 @@ import axios from "axios";
 const API_URL = import.meta.env.VITE_API_URLA;
 
 // ── Auth header helper ─────────────────────────────────────────
-// Sends the token in the Authorization header as a fallback for
-// mobile browsers (Safari ITP) that block cross-site cookies.
 const authHeader = () => {
   const token = localStorage.getItem("adminToken");
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -35,10 +33,7 @@ export const logoutAdmin = createAsyncThunk(
       const response = await axios.post(
         `${API_URL}/logout`,
         {},
-        {
-          withCredentials: true,
-          headers: authHeader(),
-        },
+        { withCredentials: true, headers: authHeader() },
       );
       return response.data;
     } catch (error) {
@@ -55,12 +50,7 @@ export const changePassword = createAsyncThunk(
       const response = await axios.put(
         `${API_URL}/change-password`,
         passwords,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            ...authHeader(),
-          },
-        },
+        { headers: { "Content-Type": "application/json", ...authHeader() } },
       );
       return response.data;
     } catch (error) {
@@ -113,10 +103,7 @@ export const createAdmin = createAsyncThunk(
   async (adminData, { rejectWithValue }) => {
     try {
       const response = await axios.post(`${API_URL}/users`, adminData, {
-        headers: {
-          "Content-Type": "application/json",
-          ...authHeader(),
-        },
+        headers: { "Content-Type": "application/json", ...authHeader() },
         withCredentials: true,
       });
       return response.data;
@@ -134,10 +121,7 @@ export const updateAdmin = createAsyncThunk(
   async ({ id, data }, { rejectWithValue }) => {
     try {
       const response = await axios.put(`${API_URL}/users/${id}`, data, {
-        headers: {
-          "Content-Type": "application/json",
-          ...authHeader(),
-        },
+        headers: { "Content-Type": "application/json", ...authHeader() },
         withCredentials: true,
       });
       return response.data;
@@ -157,10 +141,7 @@ export const toggleAdminStatus = createAsyncThunk(
       const response = await axios.patch(
         `${API_URL}/users/${id}/toggle-status`,
         {},
-        {
-          withCredentials: true,
-          headers: authHeader(),
-        },
+        { withCredentials: true, headers: authHeader() },
       );
       return response.data;
     } catch (error) {
@@ -184,6 +165,27 @@ export const deleteAdmin = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to delete admin",
+      );
+    }
+  },
+);
+
+// ── Toggle emergency access (Super Admin only) ─────────────────
+// grant: true  → grant access for expiryHours (default 2)
+// grant: false → revoke access immediately
+export const toggleEmergencyAccess = createAsyncThunk(
+  "admin/toggleEmergencyAccess",
+  async ({ id, grant, expiryHours = 2 }, { rejectWithValue }) => {
+    try {
+      const response = await axios.patch(
+        `${API_URL}/users/${id}/emergency-access`,
+        { grant, expiryHours },
+        { withCredentials: true, headers: authHeader() },
+      );
+      return response.data; // expects { message, admin }
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to update emergency access",
       );
     }
   },
@@ -224,7 +226,6 @@ const adminSlice = createSlice({
         state.currentAdmin = action.payload.admin;
         state.isAuthenticated = true;
         state.error = null;
-        // Save token for mobile browsers that block cookies (Safari ITP)
         if (action.payload.token) {
           localStorage.setItem("adminToken", action.payload.token);
         }
@@ -278,7 +279,6 @@ const adminSlice = createSlice({
         state.loading = false;
         state.isAuthenticated = false;
         state.currentAdmin = null;
-        // Clear expired or invalid token from storage
         localStorage.removeItem("adminToken");
       })
 
@@ -350,6 +350,26 @@ const adminSlice = createSlice({
         state.error = null;
       })
       .addCase(deleteAdmin.rejected, (state, action) => {
+        state.actionLoading = false;
+        state.error = action.payload;
+      })
+
+      /* -------- Toggle Emergency Access -------- */
+      .addCase(toggleEmergencyAccess.pending, (state) => {
+        state.actionLoading = true;
+        state.error = null;
+      })
+      .addCase(toggleEmergencyAccess.fulfilled, (state, action) => {
+        state.actionLoading = false;
+        state.error = null;
+        // Update the specific admin in the list with new emergency access fields
+        const updated = action.payload.admin;
+        if (updated) {
+          const idx = state.admins.findIndex((a) => a._id === updated._id);
+          if (idx !== -1) state.admins[idx] = updated;
+        }
+      })
+      .addCase(toggleEmergencyAccess.rejected, (state, action) => {
         state.actionLoading = false;
         state.error = action.payload;
       });

@@ -9,6 +9,9 @@ import {
   Trash2,
   UserCheck,
   UserX,
+  Zap,
+  ZapOff,
+  Clock,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -27,6 +30,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -43,17 +47,25 @@ import {
   updateAdmin,
   toggleAdminStatus,
   deleteAdmin,
+  toggleEmergencyAccess,
 } from "../Redux/slice/adminSlice";
 
 export function AdminUsersPage() {
   const dispatch = useDispatch();
-  const { admins, adminsLoading, actionLoading } = useSelector(
+  const { admins, adminsLoading, actionLoading, currentAdmin } = useSelector(
     (state) => state.admin,
   );
+
+  // ── NEW: check if logged-in user is Super Admin ────────────
+  const isSuperAdmin = currentAdmin?.role === "Super Admin";
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+
+  // ── NEW: emergency access dialog state ─────────────────────
+  const [emergencyDialogOpen, setEmergencyDialogOpen] = useState(false);
+  const [emergencyHours, setEmergencyHours] = useState("2");
 
   // Form state for new user
   const [newUser, setNewUser] = useState({
@@ -75,8 +87,6 @@ export function AdminUsersPage() {
     dispatch(fetchAllAdmins());
   }, [dispatch]);
 
-  // NO ERROR HANDLING USEEFFECT - Handle errors directly in action handlers
-
   const handleAddUser = async () => {
     if (!newUser.name || !newUser.email || !newUser.password) {
       toast.error("Please fill in all required fields");
@@ -91,7 +101,7 @@ export function AdminUsersPage() {
       toast.success(`Admin user created successfully`);
       setNewUser({ name: "", email: "", password: "", role: "Staff" });
       setDialogOpen(false);
-      dispatch(fetchAllAdmins()); // Refresh list
+      dispatch(fetchAllAdmins());
     }
   };
 
@@ -111,7 +121,7 @@ export function AdminUsersPage() {
       toast.success("User updated successfully");
       setEditDialogOpen(false);
       setSelectedUser(null);
-      dispatch(fetchAllAdmins()); // Refresh list
+      dispatch(fetchAllAdmins());
     }
   };
 
@@ -123,7 +133,7 @@ export function AdminUsersPage() {
     } else {
       const action = currentStatus === "Active" ? "deactivated" : "activated";
       toast.success(`User ${action} successfully`);
-      dispatch(fetchAllAdmins()); // Refresh list
+      dispatch(fetchAllAdmins());
     }
   };
 
@@ -150,6 +160,60 @@ export function AdminUsersPage() {
       role: user.role,
     });
     setEditDialogOpen(true);
+  };
+
+  // ── NEW: emergency access handlers ─────────────────────────
+  const openEmergencyDialog = (user) => {
+    setSelectedUser(user);
+    setEmergencyHours("2");
+    setEmergencyDialogOpen(true);
+  };
+
+  const handleGrantEmergencyAccess = async () => {
+    if (!selectedUser) return;
+    const result = await dispatch(
+      toggleEmergencyAccess({
+        id: selectedUser._id,
+        grant: true,
+        expiryHours: Number(emergencyHours),
+      }),
+    );
+    if (result.error) {
+      toast.error(result.payload || "Failed to grant emergency access");
+    } else {
+      toast.success(
+        `Emergency access granted to ${selectedUser.name} for ${emergencyHours} hour(s)`,
+      );
+      setEmergencyDialogOpen(false);
+      setSelectedUser(null);
+    }
+  };
+
+  const handleRevokeEmergencyAccess = async (user) => {
+    const result = await dispatch(
+      toggleEmergencyAccess({ id: user._id, grant: false }),
+    );
+    if (result.error) {
+      toast.error(result.payload || "Failed to revoke emergency access");
+    } else {
+      toast.success(`Emergency access revoked from ${user.name}`);
+    }
+  };
+
+  // ── NEW: emergency access helpers ──────────────────────────
+  const isEmergencyActive = (user) => {
+    if (!user.emergencyAccess) return false;
+    if (!user.emergencyAccessExpiresAt) return false;
+    return new Date() < new Date(user.emergencyAccessExpiresAt);
+  };
+
+  const emergencyExpiryLabel = (user) => {
+    if (!user.emergencyAccessExpiresAt) return "";
+    const diff = new Date(user.emergencyAccessExpiresAt) - Date.now();
+    if (diff <= 0) return "Expired";
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    return hours > 0 ? `${hours}h ${mins}m left` : `${mins}m left`;
   };
 
   const getRoleBadge = (role) => {
@@ -293,16 +357,17 @@ export function AdminUsersPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">Super Admins</p>
+                {/* NEW: shows active emergency access count */}
+                <p className="text-sm text-gray-600 mb-1">Emergency Access</p>
                 <h3
                   className="text-2xl text-[#1e3a5f]"
                   style={{ fontFamily: "Playfair Display, serif" }}
                 >
-                  {admins.filter((u) => u.role === "Super Admin").length}
+                  {admins.filter((u) => isEmergencyActive(u)).length}
                 </h3>
               </div>
-              <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
-                <Shield className="w-6 h-6 text-purple-600" />
+              <div className="w-12 h-12 bg-amber-50 rounded-lg flex items-center justify-center">
+                <Zap className="w-6 h-6 text-amber-600" />
               </div>
             </div>
           </CardContent>
@@ -332,6 +397,10 @@ export function AdminUsersPage() {
                   </th>
                   <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">
                     Status
+                  </th>
+                  {/* NEW: Access column */}
+                  <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">
+                    Access
                   </th>
                   <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">
                     Created
@@ -376,6 +445,31 @@ export function AdminUsersPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(user.status)}
                     </td>
+
+                    {/* NEW: Access hours indicator */}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {user.role === "Super Admin" ? (
+                        <span className="text-xs text-gray-400">Always</span>
+                      ) : isEmergencyActive(user) ? (
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                          <span className="text-xs text-amber-600 font-medium">
+                            Emergency
+                          </span>
+                          <span className="text-xs text-gray-400">
+                            {emergencyExpiryLabel(user)}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="w-3 h-3 text-gray-400" />
+                          <span className="text-xs text-gray-400">
+                            7:30am–4pm
+                          </span>
+                        </div>
+                      )}
+                    </td>
+
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {formatDate(user.createdAt)}
                     </td>
@@ -413,16 +507,47 @@ export function AdminUsersPage() {
                               </>
                             )}
                           </DropdownMenuItem>
+
+                          {/* NEW: Emergency access — Super Admin only */}
+                          {isSuperAdmin && user.role !== "Super Admin" && (
+                            <>
+                              <DropdownMenuSeparator />
+                              {isEmergencyActive(user) ? (
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    handleRevokeEmergencyAccess(user)
+                                  }
+                                  disabled={actionLoading}
+                                  className="text-amber-600"
+                                >
+                                  <ZapOff className="w-4 h-4 mr-2" />
+                                  Revoke Emergency Access
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem
+                                  onClick={() => openEmergencyDialog(user)}
+                                  className="text-amber-600"
+                                >
+                                  <Zap className="w-4 h-4 mr-2" />
+                                  Grant Emergency Access
+                                </DropdownMenuItem>
+                              )}
+                            </>
+                          )}
+
                           {user.role !== "Super Admin" && (
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleDeleteUser(user._id, user.role)
-                              }
-                              className="text-red-600"
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Delete User
-                            </DropdownMenuItem>
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleDeleteUser(user._id, user.role)
+                                }
+                                className="text-red-600"
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Delete User
+                              </DropdownMenuItem>
+                            </>
                           )}
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -435,7 +560,7 @@ export function AdminUsersPage() {
         </CardContent>
       </Card>
 
-      {/* Add User Dialog */}
+      {/* Add User Dialog — unchanged */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -539,7 +664,7 @@ export function AdminUsersPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit User Dialog */}
+      {/* Edit User Dialog — unchanged */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -618,6 +743,77 @@ export function AdminUsersPage() {
                 </>
               ) : (
                 "Save Changes"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* NEW: Emergency Access Dialog */}
+      <Dialog open={emergencyDialogOpen} onOpenChange={setEmergencyDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-10 h-10 bg-amber-50 rounded-full flex items-center justify-center">
+                <Zap className="w-5 h-5 text-amber-600" />
+              </div>
+              <DialogTitle
+                className="text-xl text-[#1e3a5f]"
+                style={{ fontFamily: "Playfair Display, serif" }}
+              >
+                Grant Emergency Access
+              </DialogTitle>
+            </div>
+            <DialogDescription>
+              Temporarily grant{" "}
+              <span className="font-semibold text-gray-800">
+                {selectedUser?.name}
+              </span>{" "}
+              access outside working hours. Access will auto-expire.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4 space-y-3">
+            <Label>Access duration</Label>
+            <Select value={emergencyHours} onValueChange={setEmergencyHours}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">1 hour</SelectItem>
+                <SelectItem value="2">2 hours</SelectItem>
+                <SelectItem value="4">4 hours</SelectItem>
+                <SelectItem value="8">8 hours</SelectItem>
+                <SelectItem value="24">24 hours</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-gray-400">
+              Access automatically revokes after the selected duration.
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setEmergencyDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleGrantEmergencyAccess}
+              disabled={actionLoading}
+              className="bg-amber-500 hover:bg-amber-600 text-white"
+            >
+              {actionLoading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  Granting...
+                </>
+              ) : (
+                <>
+                  <Zap className="w-4 h-4 mr-2" />
+                  Grant Access
+                </>
               )}
             </Button>
           </DialogFooter>
