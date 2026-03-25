@@ -20,7 +20,10 @@ export const loginAdmin = createAsyncThunk(
       });
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || "Login failed");
+      // Return full error data so login page can check code
+      return rejectWithValue(
+        error.response?.data || error.response?.data?.message || "Login failed",
+      );
     }
   },
 );

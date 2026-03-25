@@ -354,22 +354,38 @@ export function AdminLoginPage() {
       toast.error("Please enter both email and password");
       return;
     }
+
     const result = await dispatch(loginAdmin({ email, password }));
+
     if (result.meta.requestStatus === "rejected") {
-      const errorMessage =
-        result.payload?.message || result.error?.message || "Login failed";
-      toast.error(errorMessage);
+      const payload = result.payload;
+
+      // ── Outside working hours — show styled warning ────────────
+      if (
+        typeof payload === "string"
+          ? payload.includes("7:30")
+          : payload?.code === "OUTSIDE_WORKING_HOURS"
+      ) {
+        toast.warning(
+          "Access Restricted — Admin portal is only accessible Mon–Fri, 7:30am–4:00pm (WAT). Contact the Super Admin for emergency access.",
+          { duration: 8000 },
+        );
+      } else {
+        toast.error(
+          typeof payload === "string"
+            ? payload
+            : payload?.message || "Login failed",
+        );
+      }
     } else if (result.meta.requestStatus === "fulfilled") {
       if (remember) {
         localStorage.setItem("adminEmail", email);
-        localStorage.setItem("adminPassword", password);
         localStorage.setItem("rememberMe", "true");
       } else {
         localStorage.removeItem("adminEmail");
-        localStorage.removeItem("adminPassword");
         localStorage.removeItem("rememberMe");
       }
-      toast.success("Login successful");
+      toast.success("Welcome back! Redirecting to dashboard...");
       setHasRedirected(true);
       navigate("/admin/dashboard", { replace: true });
     }
